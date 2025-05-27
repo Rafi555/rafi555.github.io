@@ -3,48 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Name - Portfolio</title>
-    <link rel="stylesheet" href="style.css"> 
+    <title>Syed Sakib Ahmed - Portfolio & Story</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        .section-title { border-bottom: 2px solid #6b7280; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+        .active-nav { color: #059669; font-weight: 600; border-bottom: 2px solid #059669; }
+        .nav-link { transition: all 0.3s ease; padding-bottom: 0.25rem; }
+        .nav-link:hover { color: #047857; border-bottom: 2px solid #047857; }
+        /* Add any custom styles needed for your specific elements if Tailwind defaults aren't enough */
+    </style>
 </head>
-<body>
+<body class="bg-stone-100 text-neutral-800 antialiased">
 
-    <header>
-        <h1>Welcome to My Page!</h1>
-        <nav>
-            <ul>
-                <li><a href="index.html">Home</a></li>
-                <li><a href="story_1.html">My Story</a></li>
-                <li><a href="mycv.pdf" target="_blank">About Me</a></li> 
-            </ul>
+    <header class="bg-warm_gray-100 bg-opacity-90 backdrop-blur-md sticky top-0 z-50 shadow-md">
+        <nav class="container mx-auto px-6 py-3">
+            <div class="flex justify-between items-center">
+                <h1 class="text-xl md:text-2xl font-bold text-emerald-700">Syed Sakib Ahmed</h1>
+                <div class="space-x-4 md:space-x-6 text-sm md:text-base">
+                    <a href="#home" class="nav-link">Home</a>
+                    <a href="#my-story" class="nav-link">My Story</a>
+                    <a href="#about-me" class="nav-link">About Me</a>
+                </div>
+            </div>
         </nav>
     </header>
 
-    <main>
-        <section id="welcome">
-            <h2>Hello there!</h2>
-            <p>This is the main content area of your index file. You can add an introduction about yourself here.</p>
+    <main class="container mx-auto px-6 py-8">
+
+        <section id="home" class="mb-12 pt-16 -mt-16 text-center">
+            <h2 class="text-4xl md:text-5xl font-bold mb-6 text-emerald-800">Welcome to My Corner of the Web!</h2>
+            <p class="text-lg md:text-xl text-neutral-600 max-w-2xl mx-auto">
+                Hi, I'm Rafi! Explore my journey, delve into my experiences, and learn more about me.
+            </p>
+            <div class="mt-8 flex justify-center space-x-4">
+                <a href="#my-story" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                    Discover My Story
+                </a>
+                <a href="#about-me" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                    Learn About Me
+                </a>
+            </div>
         </section>
 
         ---
 
-        <section id="my-story-section">
-            <h2>My Story</h2>
-            <p>Want to know more about my journey? Click below to read my story.</p>
-            <p><a href="story_1.html">Read My Story</a></p>
+        <section id="my-story" class="mb-12 pt-16 -mt-16">
+            <h2 class="text-3xl font-bold mb-6 section-title text-neutral-700">My Story</h2>
+            <div class="bg-stone-200 p-8 rounded-lg shadow-lg border border-stone-300">
+                <p class="mb-6 text-lg text-stone-800">
+                    Every journey has a beginning, and mine is no different. From early inspirations to challenges overcome, I've gathered my thoughts and experiences in a dedicated space. Click the link below to dive deeper into the narrative that has shaped who I am today.
+                </p>
+                <div class="text-center">
+                    <a href="story_1.html" class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 px-8 rounded-full text-lg transition duration-300 transform hover:scale-105 inline-flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5s3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18s-3.332.477-4.5 1.253"></path></svg>
+                        Read My Story
+                    </a>
+                </div>
+            </div>
         </section>
 
         ---
 
-        <section id="about-me-section">
-            <h2>About Me</h2>
-            <p>Learn more about my skills, experience, and education by checking out my CV.</p>
-            <p><a href="CV_SYED_SAKIB_AHMED_Updated.pdf" target="_blank">View My CV</a></p> 
+        <section id="about-me" class="pt-16 -mt-16">
+            <h2 class="text-3xl font-bold mb-6 section-title text-neutral-700">About Me</h2>
+            <div class="bg-sky-100 p-8 rounded-lg shadow-lg border border-sky-300">
+                <p class="mb-6 text-lg text-sky-800">
+                    Curious about my professional background, skills, and achievements? My CV is a comprehensive overview of my qualifications. Click the button below to view or download it and get a more detailed insight into my expertise.
+                </p>
+                <div class="text-center">
+                    <a href="CV_SYED_SAKIB_AHMED_Updated.pdf" target="_blank" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-8 rounded-full text-lg transition duration-300 transform hover:scale-105 inline-flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        View My CV
+                    </a>
+                </div>
+            </div>
         </section>
+
     </main>
 
-    <footer>
-        <p>&copy; 2025 Syed Sakib Ahmed</p>
+    <footer class="text-center py-8 mt-12 border-t border-neutral-300">
+        <p class="text-neutral-600 text-sm">&copy; 2025 Syed Sakib Ahmed. All rights reserved.</p>
     </footer>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Smooth scroll for navigation
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('main section');
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetSection = document.querySelector(targetId);
+                    if (targetSection) {
+                        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+
+            // Active nav link highlighting on scroll
+            function updateActiveNavLink() {
+                let currentSectionId = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.clientHeight;
+                    if (pageYOffset >= sectionTop - 100 && pageYOffset < sectionTop + sectionHeight - 100) {
+                        currentSectionId = '#' + section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active-nav');
+                    if (link.getAttribute('href') === currentSectionId) {
+                        link.classList.add('active-nav');
+                    }
+                });
+            }
+            window.addEventListener('scroll', updateActiveNavLink);
+            updateActiveNavLink(); // Initial call to set active link
+        });
+    </script>
 </body>
 </html>
