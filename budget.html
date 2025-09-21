@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeanOps™ Cash Flow Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .kpi-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.2s;
+        }
+        .kpi-card:hover {
+            transform: translateY(-5px);
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            padding: 0.5rem 1rem;
+        }
+        .tab-button.active {
+            border-bottom-color: #0ea5e9; /* sky-500 */
+            color: #0284c7; /* sky-600 */
+            font-weight: 600;
+        }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        #confirmation-modal {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Dashboard Header -->
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">LeanOps™ Cash Flow Command Center</h1>
+            <p class="mt-2 text-gray-600">A clear, automated view of your business's financial health. Answering the question: "Where is my money going?"</p>
+        </header>
+
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <!-- Tab Navigation -->
+            <div class="border-b border-gray-200">
+                <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
+                    <button class="tab-button active" data-tab="dashboard">Dashboard</button>
+                    <button class="tab-button" data-tab="input">Data Input & Log</button>
+                </nav>
+            </div>
+
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="content-section active">
+                <!-- Control Panel -->
+                <div class="flex items-center space-x-4 py-6">
+                    <label for="month-select" class="text-sm font-medium text-gray-700">Select Month:</label>
+                    <select id="month-select" class="block w-48 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm rounded-md">
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                <!-- Main Dashboard Content -->
+                <main>
+                    <!-- KPI Cards Section -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="kpi-card">
+                            <h4 class="text-gray-500 font-medium">Monthly Income</h4>
+                            <p id="kpi-income" class="text-4xl font-bold text-teal-600 mt-2">$0.00</p>
+                        </div>
+                        <div class="kpi-card">
+                            <h4 class="text-gray-500 font-medium">Monthly Expenses</h4>
+                            <p id="kpi-expenses" class="text-4xl font-bold text-rose-600 mt-2">$0.00</p>
+                        </div>
+                        <div class="kpi-card">
+                            <h4 class="text-gray-500 font-medium">Monthly Net Flow</h4>
+                            <p id="kpi-net-flow" class="text-4xl font-bold text-sky-600 mt-2">$0.00</p>
+                        </div>
+                        <div class="kpi-card">
+                            <h4 class="text-gray-500 font-medium">Avg. Daily Spend</h4>
+                            <p id="kpi-burn-rate" class="text-4xl font-bold text-amber-600 mt-2">$0.00</p>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 mt-8">
+                        <div class="lg:col-span-3 bg-gray-50 p-6 rounded-lg">
+                            <h3 class="text-xl font-semibold text-gray-700 mb-4">Income vs. Expense Trend (Last 6 Months)</h3>
+                            <div class="relative h-64 sm:h-80"><canvas id="trend-chart"></canvas></div>
+                        </div>
+                        <div class="lg:col-span-2 bg-gray-50 p-6 rounded-lg">
+                            <h3 class="text-xl font-semibold text-gray-700 mb-4">Top 5 Expense Categories</h3>
+                            <div class="relative h-64 sm:h-80"><canvas id="category-chart"></canvas></div>
+                        </div>
+                    </div>
+                </main>
+            </section>
+
+            <!-- Data Input Section -->
+            <section id="input" class="content-section">
+                 <div class="py-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Add & View Transactions</h2>
+                    <p class="mt-2 text-gray-600">Use the form to add entries, or upload a CSV file to replace all data. The expected CSV format is: Date, Description, Type, Amount.</p>
+                    
+                    <!-- Data Management Buttons -->
+                    <div class="mt-6 flex items-center space-x-4">
+                        <label for="csv-upload" class="cursor-pointer bg-teal-600 text-white py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+                            Upload Transactions (CSV)
+                        </label>
+                        <input type="file" id="csv-upload" class="hidden" accept=".csv">
+                        <button id="clear-data-btn" class="bg-rose-600 text-white py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500">
+                            Clear All Data
+                        </button>
+                    </div>
+
+                    <form id="transaction-form" class="mt-6 grid grid-cols-1 md:grid-cols-5 gap-4 items-end p-4 border border-gray-200 rounded-lg bg-gray-50">
+                        <div>
+                            <label for="trans-date" class="block text-sm font-medium text-gray-700">Date</label>
+                            <input type="date" id="trans-date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="trans-desc" class="block text-sm font-medium text-gray-700">Description</label>
+                            <input type="text" id="trans-desc" required placeholder="e.g., Client Payment" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="trans-type" class="block text-sm font-medium text-gray-700">Type</label>
+                            <select id="trans-type" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+                                <option>Income</option>
+                                <option>Expense</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="trans-amount" class="block text-sm font-medium text-gray-700">Amount</label>
+                            <input type="number" step="0.01" min="0" id="trans-amount" required placeholder="e.g., 500" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+                        </div>
+                        <button type="submit" class="w-full bg-sky-600 text-white py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">Add Transaction</button>
+                    </form>
+
+                     <!-- Grand Totals -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                        <div class="kpi-card text-center">
+                            <h4 class="text-gray-500 font-medium">Grand Total Income</h4>
+                            <p id="grand-total-income" class="text-3xl font-bold text-teal-600 mt-2">$0.00</p>
+                        </div>
+                        <div class="kpi-card text-center">
+                            <h4 class="text-gray-500 font-medium">Grand Total Expenses</h4>
+                            <p id="grand-total-expenses" class="text-3xl font-bold text-rose-600 mt-2">$0.00</p>
+                        </div>
+                        <div class="kpi-card text-center">
+                            <h4 class="text-gray-500 font-medium">Grand Net Profit</h4>
+                            <p id="grand-total-net" class="text-3xl font-bold text-sky-600 mt-2">$0.00</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4">All Transactions Log</h3>
+                        <div class="overflow-x-auto max-h-96">
+                            <table class="min-w-full bg-white">
+                                <thead class="bg-gray-100 sticky top-0">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactions-table-body-full" class="divide-y divide-gray-200">
+                                    <!-- Rows will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-rose-100">
+                    <svg class="h-6 w-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Clear All Data</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-sm text-gray-500">Are you sure you want to clear all transactions? This action cannot be undone.</p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="confirm-clear-btn" class="px-4 py-2 bg-rose-500 text-white text-base font-medium rounded-md w-auto shadow-sm hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-300">
+                        Yes, Clear Data
+                    </button>
+                    <button id="cancel-clear-btn" class="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md w-auto shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300 ml-3">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+// --- DATA STORE ---
+let mockTransactions = [
+    { date: '2025-09-01', description: 'Client Payment - Project Alpha', type: 'Income', amount: 5000 },
+    { date: '2025-09-02', description: 'Office Rent', type: 'Expense', amount: 1500 },
+    { date: '2025-09-05', description: 'Google Ads Spend', type: 'Expense', amount: 350 },
+    { date: '2025-09-10', description: 'Client Payment - Project Beta', type: 'Income', amount: 7500 },
+    { date: '2025-09-12', description: 'Office Supplies', type: 'Expense', amount: 150 },
+    { date: '2025-09-15', description: 'Utilities Bill', type: 'Expense', amount: 250 },
+    { date: '2025-09-20', description: 'Software Subscription (Adobe)', type: 'Expense', amount: 60 },
+    { date: '2025-09-25', description: 'Salaries', type: 'Expense', amount: 4000 },
+    { date: '2025-08-01', description: 'Client Payment', type: 'Income', amount: 4500 },
+    { date: '2025-08-02', description: 'Office Rent', type: 'Expense', amount: 1500 },
+    { date: '2025-08-10', description: 'Marketing Campaign', type: 'Expense', amount: 500 },
+    { date: '2025-08-25', description: 'Salaries', type: 'Expense', amount: 4000 },
+    { date: '2025-07-01', description: 'Client Payment', type: 'Income', amount: 6000 },
+    { date: '2025-07-02', description: 'Office Rent', type: 'Expense', amount: 1500 },
+    { date: '2025-07-25', description: 'Salaries', type: 'Expense', amount: 4000 },
+];
+const expenseCategories = ['Rent', 'Marketing', 'Supplies', 'Utilities', 'Software', 'Salaries'];
+
+// --- UI ELEMENTS ---
+const tabButtons = document.querySelectorAll('.tab-button');
+const contentSections = document.querySelectorAll('.content-section');
+const monthSelect = document.getElementById('month-select');
+// Dashboard KPIs
+const kpiIncome = document.getElementById('kpi-income');
+const kpiExpenses = document.getElementById('kpi-expenses');
+const kpiNetFlow = document.getElementById('kpi-net-flow');
+const kpiBurnRate = document.getElementById('kpi-burn-rate');
+// Grand Totals
+const grandTotalIncome = document.getElementById('grand-total-income');
+const grandTotalExpenses = document.getElementById('grand-total-expenses');
+const grandTotalNet = document.getElementById('grand-total-net');
+// Input and Table
+const fullTransactionsTableBody = document.getElementById('transactions-table-body-full');
+const transactionForm = document.getElementById('transaction-form');
+// New elements
+const csvUploadInput = document.getElementById('csv-upload');
+const clearDataBtn = document.getElementById('clear-data-btn');
+const confirmationModal = document.getElementById('confirmation-modal');
+const confirmClearBtn = document.getElementById('confirm-clear-btn');
+const cancelClearBtn = document.getElementById('cancel-clear-btn');
+
+
+let trendChart, categoryChart;
+
+// --- CORE FUNCTIONS ---
+const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+
+const autoCategorize = (description, type) => {
+    if (type === 'Income') return 'Client Revenue';
+    const lowerDesc = description.toLowerCase();
+    for (const category of expenseCategories) {
+        if (lowerDesc.includes(category.toLowerCase())) return category;
+    }
+    return 'Uncategorized';
+};
+
+function updateDashboard(selectedMonth) {
+    if (!selectedMonth) return;
+    const transactionsForMonth = mockTransactions.filter(t => t.date.startsWith(selectedMonth));
+    const daysInMonth = new Date(selectedMonth.substring(0,4), selectedMonth.substring(5,7), 0).getDate();
+
+    const income = transactionsForMonth.filter(t => t.type === 'Income').reduce((sum, t) => sum + t.amount, 0);
+    const expenses = transactionsForMonth.filter(t => t.type === 'Expense').reduce((sum, t) => sum + t.amount, 0);
+    const netFlow = income - expenses;
+    const burnRate = expenses > 0 ? expenses / daysInMonth : 0;
+
+    kpiIncome.textContent = formatCurrency(income);
+    kpiExpenses.textContent = formatCurrency(expenses);
+    kpiNetFlow.textContent = formatCurrency(netFlow);
+    kpiBurnRate.textContent = formatCurrency(burnRate);
+    kpiNetFlow.className = `text-4xl font-bold mt-2 ${netFlow >= 0 ? 'text-sky-600' : 'text-rose-600'}`;
+    
+    updateTrendChart(selectedMonth);
+    updateCategoryChart(transactionsForMonth);
+}
+
+function updateDataLogAndTotals() {
+    const totalIncome = mockTransactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + t.amount, 0);
+    const totalExpenses = mockTransactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + t.amount, 0);
+    grandTotalIncome.textContent = formatCurrency(totalIncome);
+    grandTotalExpenses.textContent = formatCurrency(totalExpenses);
+    grandTotalNet.textContent = formatCurrency(totalIncome - totalExpenses);
+    grandTotalNet.className = `text-3xl font-bold mt-2 ${(totalIncome - totalExpenses) >= 0 ? 'text-sky-600' : 'text-rose-600'}`;
+
+    fullTransactionsTableBody.innerHTML = '';
+    mockTransactions.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(t => {
+        const row = document.createElement('tr');
+        const amountClass = t.type === 'Income' ? 'text-teal-600' : 'text-rose-600';
+        row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(t.date + 'T00:00:00').toLocaleDateString()}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${t.description}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${t.type}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${t.category || ''}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right ${amountClass}">${formatCurrency(t.amount)}</td>
+        `;
+        fullTransactionsTableBody.appendChild(row);
+    });
+}
+
+function updateTrendChart(selectedMonthStr) {
+    if (trendChart) trendChart.destroy();
+    if (!selectedMonthStr) return;
+
+    const trendData = {};
+    const selectedDate = new Date(selectedMonthStr + '-02');
+    
+    const monthLabels = [];
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(selectedDate);
+        d.setMonth(d.getMonth() - i);
+        const monthKey = d.toISOString().slice(0, 7);
+        monthLabels.push(monthKey);
+        trendData[monthKey] = { income: 0, expenses: 0 };
+    }
+
+    mockTransactions.forEach(t => {
+        const monthKey = t.date.slice(0, 7);
+        if (trendData[monthKey]) {
+            if (t.type === 'Income') trendData[monthKey].income += t.amount;
+            else trendData[monthKey].expenses += t.amount;
+        }
+    });
+
+    const labels = monthLabels.map(m => new Date(m + '-02').toLocaleString('default', { month: 'short', year: 'numeric' }));
+    const incomeData = monthLabels.map(m => trendData[m].income);
+    const expensesData = monthLabels.map(m => trendData[m].expenses);
+    const netData = monthLabels.map(m => trendData[m].income - trendData[m].expenses);
+
+    const ctx = document.getElementById('trend-chart').getContext('2d');
+    trendChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                { type: 'line', label: 'Net Cash Flow', data: netData, borderColor: '#0ea5e9', tension: 0.1, fill: false, borderWidth: 2, yAxisID: 'y1' },
+                { type: 'bar', label: 'Income', data: incomeData, backgroundColor: '#14b8a6', yAxisID: 'y' },
+                { type: 'bar', label: 'Expenses', data: expensesData, backgroundColor: '#f43f5e', yAxisID: 'y' }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, position: 'left' }, y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } } } }
+    });
+}
+
+function updateCategoryChart(transactions) {
+    if (categoryChart) categoryChart.destroy();
+    const expenseByCategory = {};
+    transactions.filter(t => t.type === 'Expense').forEach(t => {
+        const category = t.category || 'Uncategorized';
+        expenseByCategory[category] = (expenseByCategory[category] || 0) + t.amount;
+    });
+
+    const sortedCategories = Object.entries(expenseByCategory).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const labels = sortedCategories.map(cat => cat[0]);
+    const data = sortedCategories.map(cat => cat[1]);
+    
+    const ctx = document.getElementById('category-chart').getContext('2d');
+    categoryChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Expenses',
+                data,
+                backgroundColor: ['#f43f5e', '#f97316', '#f59e0b', '#eab308', '#84cc16'],
+                borderColor: '#fff',
+                hoverOffset: 4
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+}
+
+function initialize() {
+    const months = [...new Set(mockTransactions.map(t => t.date.substring(0, 7)))].sort().reverse();
+    const currentSelection = monthSelect.value || months[0];
+    monthSelect.innerHTML = '';
+    months.forEach(monthStr => {
+        const option = document.createElement('option');
+        const date = new Date(monthStr + '-02');
+        option.value = monthStr;
+        option.textContent = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+        monthSelect.appendChild(option);
+    });
+    
+    if (months.length > 0) {
+        monthSelect.value = months.includes(currentSelection) ? currentSelection : months[0];
+    }
+
+    document.getElementById('trans-date').valueAsDate = new Date();
+    
+    updateDataLogAndTotals();
+    updateDashboard(monthSelect.value);
+}
+
+// --- EVENT LISTENERS & INITIALIZATION ---
+window.onload = () => {
+    initialize();
+
+    monthSelect.addEventListener('change', (e) => updateDashboard(e.target.value));
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            contentSections.forEach(section => {
+                section.classList.toggle('active', section.id === button.dataset.tab);
+            });
+        });
+    });
+
+    transactionForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const newTransaction = {
+            date: document.getElementById('trans-date').value,
+            description: document.getElementById('trans-desc').value,
+            type: document.getElementById('trans-type').value,
+            amount: parseFloat(document.getElementById('trans-amount').value)
+        };
+        newTransaction.category = autoCategorize(newTransaction.description, newTransaction.type);
+        
+        mockTransactions.push(newTransaction);
+        transactionForm.reset();
+        document.getElementById('trans-date').valueAsDate = new Date();
+        initialize();
+    });
+
+    // New Event Listeners for Data Management
+    clearDataBtn.addEventListener('click', () => {
+        confirmationModal.classList.remove('hidden');
+    });
+
+    cancelClearBtn.addEventListener('click', () => {
+        confirmationModal.classList.add('hidden');
+    });
+
+    confirmClearBtn.addEventListener('click', () => {
+        mockTransactions = [];
+        confirmationModal.classList.add('hidden');
+        initialize();
+    });
+
+    csvUploadInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                const importedData = results.data.map(row => ({
+                    date: row.Date,
+                    description: row.Description,
+                    type: row.Type,
+                    amount: parseFloat(row.Amount) || 0,
+                    category: autoCategorize(row.Description, row.Type)
+                }));
+                mockTransactions = importedData;
+                initialize();
+                alert('Data imported successfully!');
+                // Switch back to dashboard view
+                document.querySelector('.tab-button[data-tab="dashboard"]').click();
+            },
+            error: (error) => {
+                alert('Error parsing CSV file. Please check the format.');
+                console.error(error);
+            }
+        });
+        event.target.value = ''; // Reset file input
+    });
+};
+</script>
+
+</body>
+</html>
+
