@@ -69,7 +69,7 @@
                 </div>
                 <!-- Main Dashboard Content -->
                 <main>
-                    <!-- KPI Cards Section -->
+                    <!-- Monthly KPI Cards Section -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div class="kpi-card">
                             <h4 class="text-gray-500 font-medium">Monthly Income</h4>
@@ -89,6 +89,26 @@
                         </div>
                     </div>
 
+                     <!-- Year-to-Date (YTD) KPI Cards -->
+                    <div class="mt-8 pt-6 border-t border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Totals Up To Selected Month (YTD)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                             <div class="kpi-card text-center">
+                                <h4 class="text-gray-500 font-medium">YTD Income</h4>
+                                <p id="ytd-income" class="text-3xl font-bold text-teal-600 mt-2">$0.00</p>
+                            </div>
+                            <div class="kpi-card text-center">
+                                <h4 class="text-gray-500 font-medium">YTD Expenses</h4>
+                                <p id="ytd-expenses" class="text-3xl font-bold text-rose-600 mt-2">$0.00</p>
+                            </div>
+                            <div class="kpi-card text-center">
+                                <h4 class="text-gray-500 font-medium">YTD Net Flow</h4>
+                                <p id="ytd-net" class="text-3xl font-bold text-sky-600 mt-2">$0.00</p>
+                            </div>
+                        </div>
+                    </div>
+
+
                     <!-- Charts Section -->
                     <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 mt-8">
                         <div class="lg:col-span-3 bg-gray-50 p-6 rounded-lg">
@@ -107,15 +127,18 @@
             <section id="input" class="content-section">
                  <div class="py-6">
                     <h2 class="text-2xl font-bold text-gray-800">Add & View Transactions</h2>
-                    <p class="mt-2 text-gray-600">Use the form to add entries, or upload a CSV file to replace all data. The expected CSV format is: Date, Description, Type, Amount.</p>
+                    <p class="mt-2 text-gray-600">Use the form to add entries, or upload a CSV file. For the correct format, please use the download button.</p>
                     
                     <!-- Data Management Buttons -->
                     <div class="mt-6 flex items-center space-x-4">
-                        <label for="csv-upload" class="cursor-pointer bg-teal-600 text-white py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+                        <label for="csv-upload" class="cursor-pointer bg-teal-600 text-white py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium hover:bg-teal-700">
                             Upload Transactions (CSV)
                         </label>
                         <input type="file" id="csv-upload" class="hidden" accept=".csv">
-                        <button id="clear-data-btn" class="bg-rose-600 text-white py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500">
+                        <button id="download-sample-btn" class="bg-sky-600 text-white py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium hover:bg-sky-700">
+                            Download Sample CSV
+                        </button>
+                        <button id="clear-data-btn" class="bg-rose-600 text-white py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium hover:bg-rose-700">
                             Clear All Data
                         </button>
                     </div>
@@ -140,7 +163,7 @@
                             <label for="trans-amount" class="block text-sm font-medium text-gray-700">Amount</label>
                             <input type="number" step="0.01" min="0" id="trans-amount" required placeholder="e.g., 500" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
                         </div>
-                        <button type="submit" class="w-full bg-sky-600 text-white py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">Add Transaction</button>
+                        <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium hover:bg-blue-700">Add Transaction</button>
                     </form>
 
                      <!-- Grand Totals -->
@@ -195,12 +218,8 @@
                     <p class="text-sm text-gray-500">Are you sure you want to clear all transactions? This action cannot be undone.</p>
                 </div>
                 <div class="items-center px-4 py-3">
-                    <button id="confirm-clear-btn" class="px-4 py-2 bg-rose-500 text-white text-base font-medium rounded-md w-auto shadow-sm hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-300">
-                        Yes, Clear Data
-                    </button>
-                    <button id="cancel-clear-btn" class="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md w-auto shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300 ml-3">
-                        Cancel
-                    </button>
+                    <button id="confirm-clear-btn" class="px-4 py-2 bg-rose-500 text-white text-base font-medium rounded-md w-auto shadow-sm hover:bg-rose-600">Yes, Clear Data</button>
+                    <button id="cancel-clear-btn" class="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md w-auto shadow-sm hover:bg-gray-300 ml-3">Cancel</button>
                 </div>
             </div>
         </div>
@@ -209,33 +228,39 @@
 <script>
 // --- DATA STORE ---
 let mockTransactions = [
-    { date: '2025-09-01', description: 'Client Payment - Project Alpha', type: 'Income', amount: 5000 },
-    { date: '2025-09-02', description: 'Office Rent', type: 'Expense', amount: 1500 },
-    { date: '2025-09-05', description: 'Google Ads Spend', type: 'Expense', amount: 350 },
-    { date: '2025-09-10', description: 'Client Payment - Project Beta', type: 'Income', amount: 7500 },
-    { date: '2025-09-12', description: 'Office Supplies', type: 'Expense', amount: 150 },
-    { date: '2025-09-15', description: 'Utilities Bill', type: 'Expense', amount: 250 },
-    { date: '2025-09-20', description: 'Software Subscription (Adobe)', type: 'Expense', amount: 60 },
-    { date: '2025-09-25', description: 'Salaries', type: 'Expense', amount: 4000 },
-    { date: '2025-08-01', description: 'Client Payment', type: 'Income', amount: 4500 },
-    { date: '2025-08-02', description: 'Office Rent', type: 'Expense', amount: 1500 },
-    { date: '2025-08-10', description: 'Marketing Campaign', type: 'Expense', amount: 500 },
-    { date: '2025-08-25', description: 'Salaries', type: 'Expense', amount: 4000 },
-    { date: '2025-07-01', description: 'Client Payment', type: 'Income', amount: 6000 },
-    { date: '2025-07-02', description: 'Office Rent', type: 'Expense', amount: 1500 },
-    { date: '2025-07-25', description: 'Salaries', type: 'Expense', amount: 4000 },
+    { date: '2025-09-01', description: 'Payment for freelance work', type: 'Income', amount: 5000 },
+    { date: '2025-09-02', description: 'Apartment Rent', type: 'Expense', amount: 1500 },
+    { date: '2025-09-05', description: 'Netflix Subscription', type: 'Expense', amount: 15 },
+    { date: '2025-09-10', description: 'September Salary', type: 'Income', amount: 7500 },
+    { date: '2025-09-12', description: 'Weekly Groceries', type: 'Expense', amount: 150 },
+    { date: '2025-09-15', 'description': 'Electricity Bill', 'type': 'Expense', 'amount': 250},
+    { date: '2025-09-20', 'description': 'Dinner with friends', 'type': 'Expense', 'amount': 60},
+    { date: '2025-09-25', 'description': 'Bus fare', 'type': 'Expense', 'amount': 40},
+    { date: '2025-08-01', description: 'August Salary', type: 'Income', amount: 4500 },
+    { date: '2025-08-02', description: 'Apartment Rent', type: 'Expense', amount: 1500 },
+    { date: '2025-08-10', description: 'New shoes', type: 'Expense', amount: 120 },
+    { date: '2025-08-25', description: 'Doctor visit', type: 'Expense', amount: 75 },
+    { date: '2025-07-01', description: 'Performance Bonus', type: 'Income', amount: 2000 },
+    { date: '2025-07-02', description: 'Apartment Rent', type: 'Expense', amount: 1500 },
 ];
-const expenseCategories = ['Rent', 'Marketing', 'Supplies', 'Utilities', 'Software', 'Salaries'];
+// Updated categories based on user feedback
+const incomeCategories = ['Freelance', 'Salary', 'Bonus', 'Gift'];
+const expenseCategories = ['Entertainment', 'Transport', 'Groceries', 'Shopping', 'Investment', 'Healthcare', 'Rent', 'Dining', 'Utilities'];
+
 
 // --- UI ELEMENTS ---
 const tabButtons = document.querySelectorAll('.tab-button');
 const contentSections = document.querySelectorAll('.content-section');
 const monthSelect = document.getElementById('month-select');
-// Dashboard KPIs
+// Monthly KPIs
 const kpiIncome = document.getElementById('kpi-income');
 const kpiExpenses = document.getElementById('kpi-expenses');
 const kpiNetFlow = document.getElementById('kpi-net-flow');
 const kpiBurnRate = document.getElementById('kpi-burn-rate');
+// YTD KPIs
+const ytdIncomeEl = document.getElementById('ytd-income');
+const ytdExpensesEl = document.getElementById('ytd-expenses');
+const ytdNetEl = document.getElementById('ytd-net');
 // Grand Totals
 const grandTotalIncome = document.getElementById('grand-total-income');
 const grandTotalExpenses = document.getElementById('grand-total-expenses');
@@ -243,8 +268,9 @@ const grandTotalNet = document.getElementById('grand-total-net');
 // Input and Table
 const fullTransactionsTableBody = document.getElementById('transactions-table-body-full');
 const transactionForm = document.getElementById('transaction-form');
-// New elements
+// Data Management
 const csvUploadInput = document.getElementById('csv-upload');
+const downloadSampleBtn = document.getElementById('download-sample-btn');
 const clearDataBtn = document.getElementById('clear-data-btn');
 const confirmationModal = document.getElementById('confirmation-modal');
 const confirmClearBtn = document.getElementById('confirm-clear-btn');
@@ -256,31 +282,57 @@ let trendChart, categoryChart;
 // --- CORE FUNCTIONS ---
 const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 
+// Smarter auto-categorization
 const autoCategorize = (description, type) => {
-    if (type === 'Income') return 'Client Revenue';
     const lowerDesc = description.toLowerCase();
-    for (const category of expenseCategories) {
-        if (lowerDesc.includes(category.toLowerCase())) return category;
+    if (type === 'Income') {
+        for (const category of incomeCategories) {
+            if (lowerDesc.includes(category.toLowerCase())) return category;
+        }
+        return 'Other Income';
+    } else { // Expense
+        for (const category of expenseCategories) {
+            if (lowerDesc.includes(category.toLowerCase())) return category;
+        }
+        return 'Uncategorized';
     }
-    return 'Uncategorized';
 };
 
+// Main function to update the dashboard view
 function updateDashboard(selectedMonth) {
     if (!selectedMonth) return;
     const transactionsForMonth = mockTransactions.filter(t => t.date.startsWith(selectedMonth));
     const daysInMonth = new Date(selectedMonth.substring(0,4), selectedMonth.substring(5,7), 0).getDate();
 
-    const income = transactionsForMonth.filter(t => t.type === 'Income').reduce((sum, t) => sum + t.amount, 0);
-    const expenses = transactionsForMonth.filter(t => t.type === 'Expense').reduce((sum, t) => sum + t.amount, 0);
-    const netFlow = income - expenses;
-    const burnRate = expenses > 0 ? expenses / daysInMonth : 0;
+    // Monthly Calculations
+    const monthlyIncome = transactionsForMonth.filter(t => t.type === 'Income').reduce((sum, t) => sum + t.amount, 0);
+    const monthlyExpenses = transactionsForMonth.filter(t => t.type === 'Expense').reduce((sum, t) => sum + t.amount, 0);
+    const monthlyNetFlow = monthlyIncome - monthlyExpenses;
+    const burnRate = monthlyExpenses > 0 ? monthlyExpenses / daysInMonth : 0;
 
-    kpiIncome.textContent = formatCurrency(income);
-    kpiExpenses.textContent = formatCurrency(expenses);
-    kpiNetFlow.textContent = formatCurrency(netFlow);
+    kpiIncome.textContent = formatCurrency(monthlyIncome);
+    kpiExpenses.textContent = formatCurrency(monthlyExpenses);
+    kpiNetFlow.textContent = formatCurrency(monthlyNetFlow);
     kpiBurnRate.textContent = formatCurrency(burnRate);
-    kpiNetFlow.className = `text-4xl font-bold mt-2 ${netFlow >= 0 ? 'text-sky-600' : 'text-rose-600'}`;
+    kpiNetFlow.className = `text-4xl font-bold mt-2 ${monthlyNetFlow >= 0 ? 'text-sky-600' : 'text-rose-600'}`;
     
+    // YTD Calculations
+    const year = selectedMonth.substring(0, 4);
+    const monthNum = parseInt(selectedMonth.substring(5, 7), 10);
+    const ytdTransactions = mockTransactions.filter(t => {
+        const tYear = t.date.substring(0, 4);
+        const tMonthNum = parseInt(t.date.substring(5, 7), 10);
+        return tYear === year && tMonthNum <= monthNum;
+    });
+    const ytdIncome = ytdTransactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + t.amount, 0);
+    const ytdExpenses = ytdTransactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + t.amount, 0);
+    const ytdNet = ytdIncome - ytdExpenses;
+
+    ytdIncomeEl.textContent = formatCurrency(ytdIncome);
+    ytdExpensesEl.textContent = formatCurrency(ytdExpenses);
+    ytdNetEl.textContent = formatCurrency(ytdNet);
+    ytdNetEl.className = `text-3xl font-bold mt-2 ${ytdNet >= 0 ? 'text-sky-600' : 'text-rose-600'}`;
+
     updateTrendChart(selectedMonth);
     updateCategoryChart(transactionsForMonth);
 }
@@ -297,6 +349,10 @@ function updateDataLogAndTotals() {
     mockTransactions.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(t => {
         const row = document.createElement('tr');
         const amountClass = t.type === 'Income' ? 'text-teal-600' : 'text-rose-600';
+        // Auto-categorize if category is missing
+        if (!t.category) {
+            t.category = autoCategorize(t.description, t.type);
+        }
         row.innerHTML = `
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(t.date + 'T00:00:00').toLocaleDateString()}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${t.description}</td>
@@ -403,6 +459,29 @@ function initialize() {
     updateDashboard(monthSelect.value);
 }
 
+function downloadSampleCSV() {
+    const csvHeader = "Date,Description,Type,Category,Amount\n";
+    const csvRows = [
+    "2025-03-18,Entertainment Payment,Expense,Entertainment,351.99",
+    "2025-09-16,Freelance Received,Income,Freelance,2885.9",
+    "2025-01-23,Salary Received,Income,Salary,4980.88",
+    "2025-01-05,Entertainment Payment,Expense,Entertainment,1784.4",
+    "2025-06-29,Bonus Received,Income,Bonus,444.04",
+    "2025-02-22,Gift Received,Income,Gift,2344.75"
+    ].join("\n");
+    
+    const csvContent = csvHeader + csvRows;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "sample_transactions.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
 // --- EVENT LISTENERS & INITIALIZATION ---
 window.onload = () => {
     initialize();
@@ -435,20 +514,15 @@ window.onload = () => {
         initialize();
     });
 
-    // New Event Listeners for Data Management
-    clearDataBtn.addEventListener('click', () => {
-        confirmationModal.classList.remove('hidden');
-    });
-
-    cancelClearBtn.addEventListener('click', () => {
-        confirmationModal.classList.add('hidden');
-    });
-
+    // Data Management Event Listeners
+    clearDataBtn.addEventListener('click', () => confirmationModal.classList.remove('hidden'));
+    cancelClearBtn.addEventListener('click', () => confirmationModal.classList.add('hidden'));
     confirmClearBtn.addEventListener('click', () => {
         mockTransactions = [];
         confirmationModal.classList.add('hidden');
         initialize();
     });
+    downloadSampleBtn.addEventListener('click', downloadSampleCSV);
 
     csvUploadInput.addEventListener('change', (event) => {
         const file = event.target.files[0];
@@ -468,15 +542,14 @@ window.onload = () => {
                 mockTransactions = importedData;
                 initialize();
                 alert('Data imported successfully!');
-                // Switch back to dashboard view
                 document.querySelector('.tab-button[data-tab="dashboard"]').click();
             },
             error: (error) => {
-                alert('Error parsing CSV file. Please check the format.');
+                alert('Error parsing CSV file. Please ensure it has headers: Date,Description,Type,Amount');
                 console.error(error);
             }
         });
-        event.target.value = ''; // Reset file input
+        event.target.value = '';
     });
 };
 </script>
