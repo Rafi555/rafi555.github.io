@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P&L & Transaction Data Viewer (BDT)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load SheetJS (xlsx) library for Excel support -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.17.4/dist/xlsx.full.min.js"></script>
+    <!-- Configure Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-blue': '#1e3a8a', // Darker Blue for main elements
+                        'accent-green': '#10b981', // Green for positive margins / cash inflow
+                        'accent-red': '#ef4444', // Red for losses/negative / cash outflow
+                        'gray-bg': '#f3ff4f6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar for aesthetic purposes */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #9ca3af;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        /* Excel-like table styling */
+        .excel-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .excel-table th, .excel-table td {
+            border: 1px solid #e5e7eb;
+            padding: 8px 12px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        .excel-table th {
+            background-color: #f3f4f6;
+            font-weight: 600;
+            color: #1f2937;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        /* Shared P&L/CFS Row Styling */
+        .statement-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            align-items: center;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #e5e7eb;
+            background-color: white; 
+        }
+        .statement-description {
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+        }
+        .statement-description.indent {
+            padding-left: 1.5rem;
+            font-weight: normal;
+            font-style: italic;
+        }
+        .statement-description.indent-2 {
+            padding-left: 3rem;
+            font-weight: normal;
+            font-style: italic;
+        }
+        .statement-amount {
+            text-align: right;
+            font-weight: 500;
+        }
+        
+        /* Tighter, cleaner button styling for P&L expanders */
+        .pnl-toggle-btn {
+            width: 14px; 
+            height: 14px; 
+            background: none;
+            border: 1px solid #9ca3af; 
+            border-radius: 2px;
+            cursor: pointer;
+            color: #1f2937;
+            font-weight: 600;
+            font-size: 0.7rem; 
+            margin-right: 8px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        /* Excel-like Totals Styling */
+        .statement-subtotal {
+            font-weight: bold;
+            background-color: #f9fafb; 
+            /* Double line border above/below totals */
+            border-top: 3px double #9ca3af !important; 
+            border-bottom: 3px double #9ca3af !important; 
+        }
+        .statement-final-total {
+            font-weight: bolder;
+            background-color: #1e3a8a; 
+            color: white;
+            border-top: 3px double white !important;
+            border-bottom: 3px double white !important;
+        }
+        
+        .statement-header-row {
+            background-color: #f3f4f6;
+            border-bottom: 1px solid #d1d5db;
+        }
+        
+        /* Styling for manual input fields in CFS */
+        .cfs-input-field {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding: 8px 12px;
+            background-color: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .cfs-input-field label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #4b5563;
+        }
+        .cfs-input-field input {
+            width: 120px;
+            padding: 4px 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            text-align: right;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-bg font-sans min-h-screen p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="text-center mb-6">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-primary-blue">
+                Transaction Viewer & Financial Statements
+            </h1>
+            <p class="text-gray-600 mt-2">Upload your CSV or Excel (.xlsx) file to view data and generate the P&L and Cash Flow.</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="mb-4 border-b border-gray-200">
+            <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="tab-nav" role="tablist">
+                <li class="mr-2" role="presentation">
+                    <button class="inline-block p-4 rounded-t-lg border-b-2 border-primary-blue text-primary-blue hover:text-blue-600 hover:border-blue-300 active" id="tab-data" type="button" role="tab" onclick="showTab('data')">
+                        Data Table (Excel View)
+                    </button>
+                </li>
+                <li class="mr-2" role="presentation">
+                    <button class="inline-block p-4 rounded-t-lg border-b-2 border-transparent text-gray-500 hover:text-gray-600 hover:border-gray-300" id="tab-pnl" type="button" role="tab" onclick="showTab('pnl')">
+                        P&L Dashboard (BDT)
+                    </button>
+                </li>
+                 <li class="mr-2" role="presentation">
+                    <button class="inline-block p-4 rounded-t-lg border-b-2 border-transparent text-gray-500 hover:text-gray-600 hover:border-gray-300" id="tab-cashflow" type="button" role="tab" onclick="showTab('cashflow')">
+                        Cash Flow Statement (Direct)
+                    </button>
+                </li>
+                 <li class="mr-2" role="presentation">
+                    <button class="inline-block p-4 rounded-t-lg border-b-2 border-transparent text-gray-500 hover:text-gray-600 hover:border-gray-300" id="tab-categorysum" type="button" role="tab" onclick="showTab('categorysum')">
+                        Category Sum
+                    </button>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Action Bar (Upload, Recalculate, Reset) -->
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-6">
+            <h3 class="font-semibold text-primary-blue border-b pb-2 mb-4">Transaction Actions</h3>
+            <div class="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
+                
+                <!-- File Upload -->
+                <input type="file" id="file-input" accept=".csv, .xlsx" class="w-full md:w-auto text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-blue file:text-white hover:file:bg-blue-800" onchange="handleFileUpload(event)">
+                
+                <!-- New Buttons -->
+                <button id="calculate-btn" onclick="recalculateAll()" class="px-4 py-2 rounded-full text-sm font-semibold text-white bg-accent-green hover:bg-green-600 transition duration-150 whitespace-nowrap">
+                    Recalculate Statements
+                </button>
+
+                <button onclick="resetAll()" class="px-4 py-2 rounded-full text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 transition duration-150 whitespace-nowrap">
+                    Reset All
+                </button>
+
+                <!-- Status -->
+                <p id="upload-status" class="text-xs h-4 text-gray-600 italic mt-2 md:mt-0">Expected columns: Date, Description, Tag/Serial, Debit, Credit, Category, Notes.</p>
+            </div>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="tab-content">
+            
+            <!-- Data Table View -->
+            <div id="data-view" class="tab-pane">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Raw Transaction Data</h2>
+                    <div class="overflow-x-auto max-h-[70vh] relative">
+                        <!-- Table will be populated here -->
+                        <table id="data-table" class="excel-table">
+                            <caption class="p-4 text-gray-500 text-sm italic">Upload a CSV or Excel (.xlsx) file to view transaction data.</caption>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- P&L Dashboard View -->
+            <div id="pnl-view" class="tab-pane hidden">
+                 <!-- P&L OUTPUT TABLE -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <div class="mb-4 border-b pb-2">
+                        <h2 class="text-xl font-bold text-gray-800">Contribution P&L Results</h2>
+                        <p class="text-sm text-gray-500">Calculations based on data in the "Data Table" tab (Accrual Basis).</p>
+                    </div>
+
+                    <!-- Manual Input for D&A (Often manually calculated) -->
+                    <div class="bg-gray-100 p-4 rounded-lg mb-4 flex justify-between items-center shadow-inner">
+                        <label for="input-dna" class="text-sm font-semibold text-primary-blue">Manual Adjustment: D&A (in BDT)</label>
+                        <input type="number" id="input-dna" value="2000" class="w-28 p-2 rounded-lg text-sm bg-white text-right border focus:ring-primary-blue focus:border-primary-blue" oninput="recalculateAll()">
+                    </div>
+
+                    <div id="pnl-output" class="text-sm border border-gray-300 rounded-lg overflow-hidden">
+                        
+                        <!-- REVENUE -->
+                        <div class="statement-row statement-header-row">
+                            <div class="statement-description font-bold">Gross Sales</div>
+                            <div class="statement-amount" id="output-gross-sales"></div>
+                        </div>
+
+                        <!-- DEDUCTIONS (COLLAPSIBLE HEADER) -->
+                        <div class="statement-row statement-header-row cursor-pointer hover:bg-gray-200" data-toggle-id="deductions-group" onclick="toggleDetail('deductions-group')">
+                            <div class="statement-description">
+                                <button class="pnl-toggle-btn" data-icon-id="deductions-group">+</button>
+                                Less: Deductions
+                            </div>
+                            <div class="statement-amount text-accent-red font-medium" id="output-deductions-sum"></div>
+                        </div>
+                        
+                        <!-- Deduction Details (Collapsed by default) -->
+                        <div class="pnl-detail-group" id="deductions-group" style="display: none;">
+                            <div class="statement-row">
+                                <div class="statement-description indent">Discounts / Promotions</div>
+                                <div class="statement-amount text-accent-red" id="output-discounts-exp"></div>
+                            </div>
+                            <div class="statement-row">
+                                <div class="statement-description indent">Returns & Refunds</div>
+                                <div class="statement-amount text-accent-red" id="output-returns-exp"></div>
+                            </div>
+                        </div>
+
+                        <!-- NET REVENUE (SUBTOTAL) -->
+                        <div class="statement-row statement-subtotal">
+                            <div class="statement-description text-primary-blue">NET REVENUE</div>
+                            <div class="statement-amount text-primary-blue" id="output-net-revenue"></div>
+                        </div>
+
+                        <!-- COGS (COLLAPSIBLE HEADER) -->
+                        <div class="statement-row statement-header-row cursor-pointer hover:bg-gray-200 mt-2" data-toggle-id="cogs-group" onclick="toggleDetail('cogs-group')">
+                            <div class="statement-description">
+                                <button class="pnl-toggle-btn" data-icon-id="cogs-group">+</button>
+                                Less: COGS
+                            </div>
+                            <div class="statement-amount text-accent-red font-medium" id="output-cogs-exp-sum"></div>
+                        </div>
+                        
+                        <!-- COGS Details -->
+                        <div class="pnl-detail-group" id="cogs-group" style="display: none;">
+                            <div class="statement-row">
+                                <div class="statement-description indent">COGS (Product)</div>
+                                <div class="statement-amount text-accent-red" id="output-cogs-exp"></div>
+                            </div>
+                        </div>
+
+                        <!-- GROSS MARGIN (GM) (SUBTOTAL) -->
+                        <div class="statement-row statement-subtotal">
+                            <div class="statement-description text-accent-green">1. GROSS MARGIN (GM)</div>
+                            <div class="statement-amount text-accent-green" id="output-gm"></div>
+                        </div>
+                        
+                        <!-- FULFILLMENT (COLLAPSIBLE HEADER) -->
+                        <div class="statement-row statement-header-row cursor-pointer hover:bg-gray-200 mt-2" data-toggle-id="fulfillment-group" onclick="toggleDetail('fulfillment-group')">
+                            <div class="statement-description">
+                                <button class="pnl-toggle-btn" data-icon-id="fulfillment-group">+</button>
+                                Less: Fulfillment Costs
+                            </div>
+                            <div class="statement-amount text-accent-red font-medium" id="output-fulfillment-exp-sum"></div>
+                        </div>
+                        
+                        <!-- Fulfillment Details -->
+                        <div class="pnl-detail-group" id="fulfillment-group" style="display: none;">
+                            <div class="statement-row">
+                                <div class="statement-description indent">Warehousing</div>
+                                <div class="statement-amount text-accent-red" id="output-warehousing-exp"></div>
+                            </div>
+                            <div class="statement-row">
+                                <div class="statement-description indent">Packaging & Shipping</div>
+                                <div class="statement-amount text-accent-red" id="output-shipping-exp"></div>
+                            </div>
+                        </div>
+
+                        <!-- CM1 (SUBTOTAL) -->
+                        <div class="statement-row statement-subtotal">
+                            <div class="statement-description text-accent-green">2. CONTRIBUTION MARGIN 1 (CM1)</div>
+                            <div class="statement-amount text-accent-green" id="output-cm1"></div>
+                        </div>
+                        
+                        <!-- SALES & MARKETING (COLLAPSIBLE HEADER) -->
+                        <div class="statement-row statement-header-row cursor-pointer hover:bg-gray-200 mt-2" data-toggle-id="s&m-group" onclick="toggleDetail('s&m-group')">
+                            <div class="statement-description">
+                                <button class="pnl-toggle-btn" data-icon-id="s&m-group">+</button>
+                                Less: Sales & Marketing
+                            </div>
+                            <div class="statement-amount text-accent-red font-medium" id="output-s&m-exp-sum"></div>
+                        </div>
+                        
+                        <!-- S&M Details -->
+                        <div class="pnl-detail-group" id="s&m-group" style="display: none;">
+                            <div class="statement-row">
+                                <div class="statement-description indent">Marketing</div>
+                                <div class="statement-amount text-accent-red" id="output-marketing-exp"></div>
+                            </div>
+                            <div class="statement-row">
+                                <div class="statement-description indent">Bad Debt / Write-offs</div>
+                                <div class="statement-amount text-accent-red" id="output-baddebt-exp"></div>
+                            </div>
+                        </div>
+
+                        <!-- CM2 (SUBTOTAL) -->
+                        <div class="statement-row statement-subtotal">
+                            <div class="statement-description text-accent-green">3. CONTRIBUTION MARGIN 2 (CM2)</div>
+                            <div class="statement-amount text-accent-green" id="output-cm2"></div>
+                        </div>
+
+                        <!-- G&A (COLLAPSIBLE HEADER) -->
+                        <div class="statement-row statement-header-row cursor-pointer hover:bg-gray-200 mt-2" data-toggle-id="g&a-group" onclick="toggleDetail('g&a-group')">
+                            <div class="statement-description">
+                                <button class="pnl-toggle-btn" data-icon-id="g&a-group">+</button>
+                                Less: Fixed G&A
+                            </div>
+                            <div class="statement-amount text-accent-red font-medium" id="output-g&a-exp-sum"></div>
+                        </div>
+                        
+                        <!-- G&A Details -->
+                        <div class="pnl-detail-group" id="g&a-group" style="display: none;">
+                            <div class="statement-row">
+                                <div class="statement-description indent">Payroll</div>
+                                <div class="statement-amount text-accent-red" id="output-payroll-exp"></div>
+                            </div>
+                            <div class="statement-row">
+                                <div class="statement-description indent">Rent</div>
+                                <div class="statement-amount text-accent-red" id="output-rent-exp"></div>
+                            </div>
+                            <div class="statement-row">
+                                <div class="statement-description indent">Utilities</div>
+                                <div class="statement-amount text-accent-red" id="output-utilities-exp"></div>
+                            </div>
+                            <div class="statement-row">
+                                <div class="statement-description indent">Admin</div>
+                                <div class="statement-amount text-accent-red" id="output-admin-exp"></div>
+                            </div>
+                             <div class="statement-row">
+                                <div class="statement-description indent">Other Expenses</div>
+                                <div class="statement-amount text-accent-red" id="output-other-exp"></div>
+                            </div>
+                        </div>
+
+                        <!-- CM3 (SUBTOTAL) -->
+                        <div class="statement-row statement-subtotal">
+                            <div class="statement-description text-accent-green">4. CONTRIBUTION MARGIN 3 (CM3)</div>
+                            <div class="statement-amount text-accent-green" id="output-cm3"></div>
+                        </div>
+                        
+                        <!-- CAPEX COSTING -->
+                        <div class="statement-row statement-header-row mt-2">
+                            <div class="statement-description">Less: Capex Costing</div>
+                            <div class="statement-amount text-accent-red font-medium" id="output-capex-exp"></div>
+                        </div>
+
+                        <!-- EBITDA (SUBTOTAL) -->
+                        <div class="statement-row statement-subtotal">
+                            <div class="statement-description text-primary-blue">EBITDA</div>
+                            <div class="statement-amount text-primary-blue" id="output-ebitda"></div>
+                        </div>
+
+                        <!-- D&A, Interest, Taxes -->
+                        <div class="statement-row">
+                            <div class="statement-description">Less: Depreciation & Amortization (D&A)</div>
+                            <div class="statement-amount text-accent-red font-medium" id="output-dna-exp"></div>
+                        </div>
+                        <div class="statement-row statement-subtotal">
+                            <div class="statement-description text-primary-blue">EBIT (Earnings Before Interest & Taxes)</div>
+                            <div class="statement-amount text-primary-blue" id="output-ebit"></div>
+                        </div>
+                        <div class="statement-row">
+                            <div class="statement-description">Less: Interest Expense</div>
+                            <div class="statement-amount text-accent-red font-medium" id="output-interest-exp"></div>
+                        </div>
+                        <div class="statement-row">
+                            <div class="statement-description">Less: Taxes</div>
+                            <div class="statement-amount text-accent-red font-medium" id="output-taxes-exp"></div>
+                        </div>
+
+                        <!-- NET PROFIT (FINAL TOTAL) -->
+                        <div class="statement-row statement-final-total">
+                            <div class="statement-description">NET PROFIT</div>
+                            <div class="statement-amount" id="output-net-profit"></div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Margin Summary -->
+                <div class="bg-white p-6 rounded-xl shadow-lg mt-8">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Margin Percentage Summary (Based on Net Revenue)</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div class="p-3 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
+                            <div class="text-2xl font-bold text-accent-green" id="output-gm-percent">0.0%</div>
+                            <div class="text-xs text-gray-500 mt-1">Gross Margin %</div>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
+                            <div class="text-2xl font-bold text-accent-green" id="output-cm1-percent">0.0%</div>
+                            <div class="text-xs text-gray-500 mt-1">CM1 %</div>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
+                            <div class="text-2xl font-bold text-accent-green" id="output-cm2-percent">0.0%</div>
+                            <div class="text-xs text-gray-500 mt-1">CM2 %</div>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
+                            <div class="text-2xl font-bold text-primary-blue" id="output-net-profit-percent">0.0%</div>
+                            <div class="text-xs text-gray-500 mt-1">Net Profit %</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cash Flow Statement View (DIRECT METHOD) -->
+            <div id="cashflow-view" class="tab-pane hidden">
+                 <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <div class="mb-4 border-b pb-2">
+                        <h2 class="text-xl font-bold text-gray-800">Cash Flow Statement (Direct Method)</h2>
+                        <p class="text-sm text-gray-500">Shows actual cash inflows and outflows by category from your transactions.</p>
+                    </div>
+                    
+                    <!-- Manual Inputs for CFS (Only Beginning Cash remains) -->
+                    <div class="bg-gray-100 p-4 rounded-lg mb-6 shadow-inner space-y-2">
+                        <div class="cfs-input-field">
+                            <label for="input-beginning-cash">Beginning Cash Balance (BDT)</label>
+                            <input type="number" id="input-beginning-cash" value="100000" oninput="recalculateAll()">
+                        </div>
+                    </div>
+
+                    <div id="cashflow-output" class="text-sm border border-gray-300 rounded-lg overflow-hidden">
+                        
+                        <!-- Cash Flow from Operating Activities (CFO) -->
+                         <div class="statement-row statement-header-row">
+                            <div class="statement-description font-bold text-primary-blue">Cash Flow from Operating Activities (CFO)</div>
+                            <div class="statement-amount"></div>
+                        </div>
+
+                        <!-- Cash Inflow -->
+                        <div class="statement-row">
+                            <div class="statement-description indent">Cash Received from Customers (Sales)</div>
+                            <div class="statement-amount text-accent-green" id="cf-output-sales-in"></div>
+                        </div>
+                        
+                        <!-- Cash Outflows -->
+                        <div class="statement-row statement-header-row">
+                            <div class="statement-description indent font-bold">Less: Cash Paid For:</div>
+                            <div class="statement-amount text-accent-red" id="cf-output-opex-out-sum"></div>
+                        </div>
+                        <div class="statement-row">
+                            <div class="statement-description indent-2">COGS (Suppliers)</div>
+                            <div class="statement-amount text-accent-red" id="cf-output-cogs-out"></div>
+                        </div>
+                        <div class="statement-row">
+                            <div class="statement-description indent-2">Fulfillment Costs</div>
+                            <div class="statement-amount text-accent-red" id="cf-output-fulfillment-out"></div>
+                        </div>
+                        <div class="statement-row">
+                            <div class="statement-description indent-2">Sales & Marketing</div>
+                            <div class="statement-amount text-accent-red" id="cf-output-s&m-out"></div>
+                        </div>
+                        <div class="statement-row">
+                            <div class="statement-description indent-2">G&A (Payroll, Rent, Admin, etc.)</div>
+                            <div class="statement-amount text-accent-red" id="cf-output-g&a-out"></div>
+                        </div>
+                        <div class="statement-row">
+                            <div class="statement-description indent-2">Interest Paid</div>
+                            <div class="statement-amount text-accent-red" id="cf-output-interest-out"></div>
+                        </div>
+                         <div class="statement-row">
+                            <div class="statement-description indent-2">Taxes Paid</div>
+                            <div class="statement-amount text-accent-red" id="cf-output-taxes-out"></div>
+                        </div>
+
+                         <div class="statement-row statement-subtotal mt-2">
+                            <div class="statement-description text-primary-blue">NET CASH FROM OPERATIONS (CFO)</div>
+                            <div class="statement-amount text-primary-blue" id="cf-output-cfo"></div>
+                        </div>
+                        
+                        <!-- Cash Flow from Investing Activities (CFI) -->
+                         <div class="statement-row statement-header-row mt-4">
+                            <div class="statement-description font-bold text-primary-blue">Cash Flow from Investing Activities (CFI)</div>
+                            <div class="statement-amount" id="cf-output-cfi-total"></div>
+                        </div>
+
+                        <!-- CFI Details (Capex is a direct outflow) -->
+                        <div class="statement-row">
+                            <div class="statement-description indent">Less: Capex (Cash spent on fixed assets)</div>
+                            <div class="statement-amount text-accent-red" id="cf-output-capex"></div>
+                        </div>
+                        <div class="statement-row statement-subtotal mt-2">
+                            <div class="statement-description text-primary-blue">NET CASH FROM INVESTING (CFI)</div>
+                            <div class="statement-amount text-primary-blue" id="cf-output-cfi"></div>
+                        </div>
+
+                         <!-- Cash Flow from Financing Activities (CFF) -->
+                         <div class="statement-row statement-header-row mt-4">
+                            <div class="statement-description font-bold text-primary-blue">Cash Flow from Financing Activities (CFF)</div>
+                            <div class="statement-amount" id="cf-output-cff-total"></div>
+                        </div>
+
+                        <!-- CFF Details -->
+                        <div class="statement-row">
+                            <div class="statement-description indent">Debt Inflow / Equity Raised</div>
+                            <div class="statement-amount text-accent-green" id="cf-output-financing-in"></div>
+                        </div>
+                        <div class="statement-row">
+                            <div class="statement-description indent">Less: Debt Repayments / Dividends</div>
+                            <div class="statement-amount text-accent-red" id="cf-output-financing-out"></div>
+                        </div>
+                         <div class="statement-row statement-subtotal mt-2">
+                            <div class="statement-description text-primary-blue">NET CASH FROM FINANCING (CFF)</div>
+                            <div class="statement-amount text-primary-blue" id="cf-output-cff"></div>
+                        </div>
+
+                        <!-- NET CHANGE IN CASH -->
+                        <div class="statement-row statement-subtotal mt-4">
+                            <div class="statement-description text-primary-blue">NET INCREASE / (DECREASE) IN CASH</div>
+                            <div class="statement-amount text-primary-blue" id="cf-output-net-change"></div>
+                        </div>
+                        
+                        <!-- BEGINNING AND ENDING CASH -->
+                        <div class="statement-row mt-2">
+                            <div class="statement-description font-bold">BEGINNING CASH BALANCE</div>
+                            <div class="statement-amount" id="cf-output-beginning-cash"></div>
+                        </div>
+                        
+                        <div class="statement-row statement-final-total">
+                            <div class="statement-description">ENDING CASH BALANCE</div>
+                            <div class="statement-amount" id="cf-output-ending-cash"></div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Category Sum View -->
+            <div id="categorysum-view" class="tab-pane hidden">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Category Totals Summary (BDT)</h2>
+                    <p class="text-sm text-gray-500 mb-4">Total aggregate value captured for each financial category from the uploaded transactions.</p>
+                    <div class="overflow-x-auto max-h-[70vh] relative">
+                        <table id="category-sum-table" class="excel-table">
+                            <caption class="p-4 text-gray-500 text-sm italic">Upload transactions to view the categorized totals here.</caption>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        // Global data storage
+        let rawTransactionRows = [];
+        let aggregatedData = {};
+        
+        // Map P&L and CFS categories to their canonical names
+        const inputMapping = [
+            'Sales (Gross)', 'Discounts / Promotions', 'Returns & Refunds', 'COGS (Product)', 
+            'Warehousing', 'Packaging & Shipping', 'Marketing', 'Bad Debt / Write-offs', 
+            'Payroll', 'Rent', 'Utilities', 'Admin', 'Other Expenses', 'Capex Costing', 
+            'Depreciation & Amortization (D&A)', 'Interest Expense', 'Taxes',
+            'Debt Inflow', 
+            'Debt Repayments/Dividends' 
+        ];
+        
+        // List of categories that represent an Outflow/Expense (Debit column aggregate)
+        const outflowCategories = [
+            'Discounts / Promotions', 'Returns & Refunds', 'COGS (Product)', 
+            'Warehousing', 'Packaging & Shipping', 'Marketing', 'Bad Debt / Write-offs', 
+            'Payroll', 'Rent', 'Utilities', 'Admin', 'Other Expenses', 'Capex Costing', 
+            'Depreciation & Amortization (D&A)', 'Interest Expense', 'Taxes',
+            'Debt Repayments/Dividends' 
+        ];
+        
+        // State to track collapse/expand status
+        let detailState = {
+            'deductions-group': false, 
+            'cogs-group': false, 
+            'fulfillment-group': false, 
+            's&m-group': false,
+            'g&a-group': false,
+        };
+
+        // --- Core Recalculation Function ---
+        const recalculateAll = () => {
+             // P&L still calculates all metrics
+            calculatePNL();
+             // CFS now calculates using the Direct Method from aggregated data
+            calculateCashFlow();
+            renderCategorySumTable();
+        };
+
+        // --- P&L Toggle Function ---
+        const toggleDetail = (groupId) => {
+            const groupElement = document.getElementById(groupId);
+            const iconElement = document.querySelector(`[data-icon-id="${groupId}"]`);
+            
+            if (detailState[groupId] === true) {
+                // Collapse
+                groupElement.style.display = 'none';
+                iconElement.textContent = '+';
+                detailState[groupId] = false;
+            } else {
+                // Expand
+                groupElement.style.display = 'block';
+                iconElement.textContent = '-';
+                detailState[groupId] = true;
+            }
+        };
+
+        // --- Helper Functions ---
+        
+        const getInputValue = (id) => {
+            const element = document.getElementById(id);
+            // Ensure we parse the input value as a float, defaulting to 0
+            return parseFloat(element ? element.value : 0) || 0;
+        };
+
+        /**
+         * Formats a number to currency and applies conditional styling for P&L/CFS.
+         * @param {number} amount The numeric value to format.
+         * @param {string} elementId The ID of the HTML element to update.
+         * @param {boolean} [isExpense=false] If true, formats a positive amount as a negative/parenthesized expense (P&L context).
+         */
+        const formatCurrency = (amount, elementId, isExpense = false) => {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            const absoluteAmount = Math.abs(amount);
+            
+            // Format number (e.g., 1234567 -> 1,234,567)
+            const formatted = new Intl.NumberFormat('en-US', {
+                minimumFractionDigits: 0, 
+                maximumFractionDigits: 0,
+            }).format(absoluteAmount);
+
+            let displayValue = `${formatted} BDT`;
+            
+            // --- Coloring and Display Logic ---
+            element.classList.remove('text-accent-green', 'text-primary-blue', 'text-accent-red', 'text-white');
+            
+            if (element.closest('#pnl-view')) {
+                // P&L Specific Formatting
+                if (isExpense && amount > 0) {
+                     displayValue = `(${formatted} BDT)`; // Standard Expense (Debit)
+                     element.classList.add('text-accent-red');
+                } else if (amount < 0 && !isExpense) {
+                    displayValue = `-${formatted} BDT`; // Negative Margin/EBIT
+                    element.classList.add('text-accent-red');
+                } else {
+                    element.classList.add(element.closest('.statement-final-total') ? 'text-white' : (element.closest('.statement-subtotal') ? 'text-primary-blue' : 'text-accent-green'));
+                }
+            } 
+            else if (element.closest('#cashflow-view')) {
+                // CFS Specific Formatting: Use parentheses for OUTFLOWS (negative values)
+                const isOutflow = amount < 0;
+                
+                if (isOutflow) {
+                    displayValue = `(${formatted} BDT)`;
+                    element.classList.add('text-accent-red'); 
+                } else if (amount > 0) {
+                    displayValue = `${formatted} BDT`;
+                    element.classList.add('text-accent-green');
+                } else {
+                    element.classList.add('text-primary-blue'); // Zero or non-colored
+                }
+
+                // Final totals override for color
+                if (element.closest('.statement-final-total')) {
+                    element.classList.remove('text-accent-green', 'text-accent-red');
+                    element.classList.add('text-white');
+                }
+                
+                // Override for Beginning Cash which should be primary blue and never negative
+                if (elementId === 'cf-output-beginning-cash') {
+                    element.classList.remove('text-accent-green', 'text-accent-red', 'text-white');
+                    element.classList.add('text-primary-blue');
+                }
+                
+                // OpEx Cash Paid summary should show the total amount as a single negative figure
+                if (elementId === 'cf-output-opex-out-sum') {
+                    // This is a sum of cash paid, so it should be negative/red if the sum is positive
+                    if (absoluteAmount > 0) {
+                        displayValue = `(${formatted} BDT)`;
+                        element.classList.add('text-accent-red');
+                    } else {
+                         displayValue = `0 BDT`;
+                         element.classList.add('text-primary-blue');
+                    }
+                }
+            }
+            
+            element.textContent = displayValue;
+        };
+        
+        const normalizeCategory = (category) => {
+            // Converts category string to lowercase, trims, and removes non-alphanumeric chars for reliable matching
+            return String(category).toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+        };
+        
+        // Helper to find the correct column key regardless of casing/whitespace
+        const findColumnKey = (rowKeys, searchName) => {
+            const normalizedSearch = normalizeCategory(searchName);
+            return rowKeys.find(key => normalizeCategory(key) === normalizedSearch);
+        };
+        
+        // Robust numeric parser for values from both XLSX (number/string) and CSV (string)
+        const parseNumericValue = (val) => {
+            if (typeof val === 'number') return val;
+            if (typeof val === 'string') {
+                 // Remove non-numeric characters except period and comma and minus for robust parsing
+                return parseFloat(val.replace(/[^\d.-]/g, '')) || 0;
+            }
+            return 0;
+        }
+
+        // --- Tab Switching Logic ---
+
+        const showTab = (tabId) => {
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.add('hidden');
+            });
+            document.querySelectorAll('#tab-nav button').forEach(button => {
+                button.classList.remove('border-primary-blue', 'text-primary-blue');
+                button.classList.add('border-transparent', 'text-gray-500');
+            });
+
+            document.getElementById(`${tabId}-view`).classList.remove('hidden');
+            const tabButton = document.getElementById(`tab-${tabId}`);
+            tabButton.classList.remove('border-transparent', 'text-gray-500');
+            tabButton.classList.add('border-primary-blue', 'text-primary-blue');
+            
+            if (tabId === 'pnl' || tabId === 'cashflow' || tabId === 'categorysum') {
+                recalculateAll();
+            }
+        };
+
+
+        // --- Core Data Aggregation and Rendering ---
+
+        const aggregateAndRender = (rawRows, headers) => {
+            // Initialize totals
+            const totals = inputMapping.reduce((acc, item) => {
+                acc[item] = 0;
+                return acc;
+            }, {}); 
+
+            // Standard P&L Mapping (used if no financing keyword is found)
+            const categoryMap = {
+                'sales': 'Sales (Gross)', 
+                'discount': 'Discounts / Promotions',
+                'return': 'Returns & Refunds',
+                'cogs': 'COGS (Product)',
+                'warehousing': 'Warehousing',
+                'shipping': 'Packaging & Shipping',
+                'marketing': 'Marketing',
+                'baddebt': 'Bad Debt / Write-offs',
+                'payroll': 'Payroll',
+                'rent': 'Rent',
+                'utilities': 'Utilities',
+                'admin': 'Admin',
+                'other': 'Other Expenses',
+                'capex': 'Capex Costing', 
+                'interest': 'Interest Expense', 
+                'taxes': 'Taxes',
+                // Debt Inflow/Outflow is handled by priority check below
+            };
+
+            const rowKeys = headers;
+            const categoryKey = findColumnKey(rowKeys, 'Category');
+            const debitKey = findColumnKey(rowKeys, 'Debit');
+            const creditKey = findColumnKey(rowKeys, 'Credit');
+            
+            if (!categoryKey || !debitKey || !creditKey) {
+                 console.error("Mandatory columns (Category, Debit, Credit) were not found.");
+            }
+
+            rawRows.forEach(row => {
+                const category = row[categoryKey];
+                if (!category) return; 
+                
+                const normalized = normalizeCategory(category);
+
+                const debit = parseNumericValue(row[debitKey]);
+                const credit = parseNumericValue(row[creditKey]);
+                
+                let mappedCategory = null;
+
+                // --- PRIORITY CHECK for FINANCING TRANSACTIONS (Uses "Debt Inflow") ---
+                // Mapping keywords like 'debtinflow', 'loaninflow', 'equity', 'financinginflow' to 'Debt Inflow'
+                if (normalized.includes('debtinflow') || normalized.includes('loaninflow') || normalized.includes('equity') || normalized.includes('financinginflow') || normalized === 'inflow') {
+                    mappedCategory = 'Debt Inflow'; // Using the user's specific term
+                } 
+                // Mapping keywords like 'debtrepayment', 'loanoutflow', 'dividend' to 'Debt Repayments/Dividends'
+                else if (normalized.includes('debtrepayment') || normalized.includes('loanoutflow') || normalized.includes('dividend') || normalized.includes('financingoutflow') || normalized === 'outflow') {
+                    mappedCategory = 'Debt Repayments/Dividends';
+                }
+                // --- END PRIORITY CHECK ---
+
+                if (mappedCategory === null) {
+                    // If not a priority Financing item, check against the P&L expense/revenue map
+                    const matchingKeyword = Object.keys(categoryMap).find(key => normalized.includes(key));
+                    if (matchingKeyword) {
+                        mappedCategory = categoryMap[matchingKeyword];
+                    }
+                }
+
+                if (mappedCategory) {
+                    // --- Inflows (Credit) ---
+                    // Sales and Debt Inflow are the only categories that take the Credit amount
+                    if (mappedCategory === 'Sales (Gross)' || mappedCategory === 'Debt Inflow') {
+                        totals[mappedCategory] += credit;
+                    }
+                    // --- Outflows/Expenses (Debit) ---
+                    // All other categories (COGS, OpEx, Debt Repayments/Dividends) take the Debit amount
+                    else {
+                        totals[mappedCategory] += debit;
+                    }
+                }
+            });
+            
+            renderDataTable(rawRows, headers);
+            rawTransactionRows = rawRows;
+            aggregatedData = totals;
+            recalculateAll(); // Run P&L and Cash Flow
+        };
+
+        const renderDataTable = (rows, headers) => {
+            const table = document.getElementById('data-table');
+            table.innerHTML = ''; 
+
+            if (rows.length === 0) {
+                table.innerHTML = '<caption class="p-4 text-gray-500 text-sm italic">Upload a CSV or Excel (.xlsx) file to view transaction data.</caption>';
+                return;
+            }
+
+            let thead = '<thead><tr>';
+            headers.forEach(header => {
+                thead += `<th>${header}</th>`;
+            });
+            thead += '</tr></thead>';
+            table.innerHTML += thead;
+
+            let tbody = '<tbody>';
+            rows.forEach(row => {
+                tbody += '<tr>';
+                headers.forEach(header => {
+                    const value = row[header] || '';
+                    const alignment = (header.toLowerCase().includes('debit') || header.toLowerCase().includes('credit')) ? 'text-right' : 'text-left';
+                    tbody += `<td class="${alignment}">${value}</td>`;
+                });
+                tbody += '</tr>';
+            });
+            tbody += '</tbody>';
+            table.innerHTML += tbody;
+        };
+        
+        // --- CATEGORY SUM RENDER FUNCTION ---
+        const renderCategorySumTable = () => {
+            const table = document.getElementById('category-sum-table');
+            table.innerHTML = ''; // Clear existing content
+            
+            if (Object.keys(aggregatedData).length === 0) {
+                 table.innerHTML = '<caption class="p-4 text-gray-500 text-sm italic">Upload transactions to view the categorized totals here.</caption>';
+                 return;
+            }
+
+            const headers = ['Financial Category', 'Total Value (BDT)'];
+            let thead = '<thead><tr>';
+            headers.forEach(header => {
+                thead += `<th class="sticky top-0">${header}</th>`;
+            });
+            thead += '</tr></thead>';
+            table.innerHTML += thead;
+
+            let tbody = '<tbody>';
+            // Convert object keys to a sorted array for consistent display
+            const sortedCategories = Object.keys(aggregatedData).sort();
+            
+            sortedCategories.forEach(category => {
+                const amount = aggregatedData[category];
+                
+                // Only display categories with a non-zero amount
+                if (amount === 0) return;
+                
+                // Format number
+                const formattedAmount = new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 0, 
+                    maximumFractionDigits: 0,
+                }).format(amount);
+
+                // Apply color based on the nature of the category using the predefined outflow list
+                let colorClass = 'text-gray-900';
+                if (outflowCategories.includes(category)) {
+                    colorClass = 'text-accent-red';
+                } else if (category === 'Sales (Gross)' || category === 'Debt Inflow') {
+                    // Debt Inflow is specifically colored green here
+                    colorClass = 'text-accent-green';
+                }
+                
+                tbody += `
+                    <tr>
+                        <td class="font-medium">${category}</td>
+                        <td class="text-right ${colorClass}">${formattedAmount} BDT</td>
+                    </tr>
+                `;
+            });
+
+            tbody += '</tbody>';
+            table.innerHTML += tbody;
+        };
+
+
+        const parseCSVText = (csvText) => {
+            const lines = csvText.split('\n').filter(line => line.trim() !== '');
+            if (lines.length < 2) throw new Error("File contains no data rows besides the header.");
+            
+            const headers = lines[0].split(',').map(h => h.trim());
+            
+            const rawRows = lines.slice(1).map(line => {
+                const cols = line.split(','); 
+                const row = {};
+                headers.forEach((header, i) => {
+                    row[header] = cols[i] ? cols[i].trim() : '';
+                }
+                );
+                return row;
+            });
+            
+            return { rawRows, headers };
+        };
+
+
+        const handleFileUpload = (event) => {
+            const file = event.target.files[0];
+            const statusElement = document.getElementById('upload-status');
+            statusElement.classList.remove('text-accent-green', 'text-accent-red', 'text-primary-blue');
+            statusElement.textContent = '';
+
+            if (!file) return;
+
+            const fileName = file.name.toLowerCase();
+            const isCSV = fileName.endsWith('.csv');
+            const isXLSX = fileName.endsWith('.xlsx');
+
+            if (!isCSV && !isXLSX) {
+                statusElement.textContent = 'Error: Please upload a CSV or XLSX file.';
+                statusElement.classList.add('text-accent-red');
+                return;
+            }
+
+            statusElement.textContent = 'Processing file...';
+            statusElement.classList.add('text-primary-blue');
+
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                try {
+                    let result = { rawRows: [], headers: [] };
+                    
+                    if (isCSV) {
+                        result = parseCSVText(e.target.result);
+                        
+                    } else if (isXLSX) {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const sheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[sheetName];
+                        
+                        if (!worksheet) throw new Error("First sheet is empty or missing.");
+
+                        const aoa = XLSX.utils.sheet_to_json(worksheet, { 
+                            raw: false, 
+                            defval: "",  
+                            header: 1 
+                        });
+                        
+                        if (aoa.length === 0) throw new Error("No data found on the first sheet.");
+
+                        const headers = aoa[0].map(h => String(h).trim()).filter(h => h);
+                        
+                        const rawRows = aoa.slice(1).map(arr => {
+                            const row = {};
+                            arr.forEach((val, i) => {
+                                if (headers[i]) {
+                                    row[headers[i]] = String(val).trim(); 
+                                }
+                            });
+                            const categoryKey = findColumnKey(headers, 'Category');
+                            // Only include rows that have a category
+                            if (categoryKey && row[categoryKey] && row[categoryKey].trim() !== '') {
+                                return row;
+                            }
+                            return null;
+                        }).filter(row => row !== null);
+                        
+                        result = { rawRows, headers };
+                    }
+                    
+                    if (result.rawRows.length === 0) {
+                        throw new Error("No valid transaction rows found after parsing. Check headers and ensure data starts in row 2.");
+                    }
+                    
+                    aggregateAndRender(result.rawRows, result.headers); 
+
+                    statusElement.textContent = `File "${file.name}" loaded successfully.`;
+                    statusElement.classList.remove('text-primary-blue');
+                    statusElement.classList.add('text-accent-green');
+                    
+                } catch (error) {
+                    statusElement.textContent = `Error processing file: ${error.message}`;
+                    statusElement.classList.remove('text-primary-blue');
+                    statusElement.classList.add('text-accent-red');
+                    console.error("Data processing error:", error);
+                }
+            };
+            
+            if (isCSV) {
+                reader.readAsText(file);
+            } else if (isXLSX) {
+                reader.readAsArrayBuffer(file);
+            }
+        };
+        
+        const resetAll = () => {
+            rawTransactionRows = [];
+            aggregatedData = {};
+
+            document.getElementById('file-input').value = null;
+            document.getElementById('input-dna').value = 2000;
+            document.getElementById('input-beginning-cash').value = 100000;
+            
+            const table = document.getElementById('data-table');
+            table.innerHTML = '<caption class="p-4 text-gray-500 text-sm italic">Upload a CSV or Excel (.xlsx) file to view transaction data.</caption>';
+             
+            // Clear Category Sum table as well
+            document.getElementById('category-sum-table').innerHTML = '<caption class="p-4 text-gray-500 text-sm italic">Upload transactions to view the categorized totals here.</caption>';
+
+
+            const statusElement = document.getElementById('upload-status');
+            statusElement.textContent = 'Expected columns: Date, Description, Tag/Serial, Debit, Credit, Category, Notes.';
+            statusElement.classList.remove('text-accent-green', 'text-accent-red', 'text-primary-blue');
+
+            recalculateAll();
+            showTab('data'); 
+        };
+
+
+        // --- P&L Calculation Function (ACCRUAL) ---
+        const calculatePNL = () => {
+            // --- 1. Get Values (Accrual P&L Basis) ---
+            const sales = aggregatedData['Sales (Gross)'] || 0;
+            const discounts = aggregatedData['Discounts / Promotions'] || 0;
+            const returns = aggregatedData['Returns & Refunds'] || 0;
+            const cogs = aggregatedData['COGS (Product)'] || 0;
+            
+            const warehousing = aggregatedData['Warehousing'] || 0;
+            const shipping = aggregatedData['Packaging & Shipping'] || 0;
+            
+            const marketing = aggregatedData['Marketing'] || 0;
+            const badDebt = aggregatedData['Bad Debt / Write-offs'] || 0;
+            
+            const payroll = aggregatedData['Payroll'] || 0;
+            const rent = aggregatedData['Rent'] || 0;
+            const utilities = aggregatedData['Utilities'] || 0;
+            const admin = aggregatedData['Admin'] || 0;
+            const other = aggregatedData['Other Expenses'] || 0;
+            
+            const capexCosting = aggregatedData['Capex Costing'] || 0;
+            const dna = getInputValue('input-dna'); 
+            const interest = aggregatedData['Interest Expense'] || 0;
+            const taxes = aggregatedData['Taxes'] || 0;
+            
+            // --- 2. Calculate Key Sub-Totals and Metrics (Standard P&L) ---
+            const deductions = discounts + returns;
+            const netRevenue = sales - deductions;
+            const grossMargin = netRevenue - cogs;
+            
+            // P&L Groupings:
+            const fulfillmentCosts = warehousing + shipping;
+            const salesMarketingExp = marketing + badDebt;
+            const gAndA = payroll + rent + utilities + admin + other;
+            
+            // P&L Margins:
+            const cm1 = grossMargin - fulfillmentCosts;
+            const cm2 = cm1 - salesMarketingExp;
+            const cm3 = cm2 - gAndA;
+            const ebitda = cm3 - capexCosting; 
+            const ebit = ebitda - dna;
+            const netProfit = ebit - interest - taxes;
+            
+            // --- 3. Update P&L Display ---
+            formatCurrency(sales, 'output-gross-sales');
+            formatCurrency(deductions, 'output-deductions-sum', true); 
+            formatCurrency(discounts, 'output-discounts-exp', true);
+            formatCurrency(returns, 'output-returns-exp', true);
+            formatCurrency(netRevenue, 'output-net-revenue');
+            formatCurrency(cogs, 'output-cogs-exp-sum', true); 
+            formatCurrency(cogs, 'output-cogs-exp', true); 
+            formatCurrency(grossMargin, 'output-gm');
+            formatCurrency(fulfillmentCosts, 'output-fulfillment-exp-sum', true); 
+            formatCurrency(warehousing, 'output-warehousing-exp', true);
+            formatCurrency(shipping, 'output-shipping-exp', true);
+            formatCurrency(cm1, 'output-cm1');
+            formatCurrency(salesMarketingExp, 'output-s&m-exp-sum', true); 
+            formatCurrency(marketing, 'output-marketing-exp', true);
+            formatCurrency(badDebt, 'output-baddebt-exp', true);
+            formatCurrency(cm2, 'output-cm2');
+            formatCurrency(gAndA, 'output-g&a-exp-sum', true); 
+            formatCurrency(payroll, 'output-payroll-exp', true);
+            formatCurrency(rent, 'output-rent-exp', true);
+            formatCurrency(utilities, 'output-utilities-exp', true);
+            formatCurrency(admin, 'output-admin-exp', true);
+            formatCurrency(other, 'output-other-exp', true);
+            formatCurrency(cm3, 'output-cm3');
+            formatCurrency(capexCosting, 'output-capex-exp', true); 
+            formatCurrency(ebitda, 'output-ebitda');
+            formatCurrency(dna, 'output-dna-exp', true);
+            formatCurrency(ebit, 'output-ebit');
+            formatCurrency(interest, 'output-interest-exp', true);
+            formatCurrency(taxes, 'output-taxes-exp', true);
+            formatCurrency(netProfit, 'output-net-profit');
+
+            const updatePercentage = (value, elementId) => {
+                const percent = netRevenue !== 0 ? (value / netRevenue) * 100 : 0;
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.textContent = `${percent.toFixed(1)}%`;
+                    element.classList.remove('text-accent-green', 'text-accent-red', 'text-primary-blue');
+                    if (percent >= 0) {
+                        if (elementId === 'output-net-profit-percent') {
+                            element.classList.add('text-primary-blue');
+                        } else {
+                            element.classList.add('text-accent-green');
+                        }
+                    } else {
+                        element.classList.add('text-accent-red');
+                    }
+                }
+            };
+            updatePercentage(grossMargin, 'output-gm-percent');
+            updatePercentage(cm1, 'output-cm1-percent');
+            updatePercentage(cm2, 'output-cm2-percent');
+            updatePercentage(netProfit, 'output-net-profit-percent');
+            
+            // Return nothing as the CFS now pulls directly from aggregatedData
+            return;
+        };
+        
+        // --- Cash Flow Statement Calculation Function (DIRECT METHOD) ---
+        const calculateCashFlow = () => {
+            
+            // --- 1. Get Core Cash Flow Metrics (These are all transaction-based totals) ---
+            const salesCashIn = aggregatedData['Sales (Gross)'] || 0; // Cash Received from Customers
+
+            // OPERATING CASH OUTFLOWS (Debit column totals)
+            const cogsCashOut = aggregatedData['COGS (Product)'] || 0;
+            const fulfillmentCashOut = (aggregatedData['Warehousing'] || 0) + (aggregatedData['Packaging & Shipping'] || 0);
+            const salesMarketingCashOut = (aggregatedData['Marketing'] || 0) + (aggregatedData['Bad Debt / Write-offs'] || 0);
+            const gAndACashOut = (aggregatedData['Payroll'] || 0) + (aggregatedData['Rent'] || 0) + (aggregatedData['Utilities'] || 0) + (aggregatedData['Admin'] || 0) + (aggregatedData['Other Expenses'] || 0);
+            const interestCashOut = aggregatedData['Interest Expense'] || 0;
+            const taxesCashOut = aggregatedData['Taxes'] || 0;
+
+            // INVESTING CASH OUTFLOWS
+            const capexCashOut = aggregatedData['Capex Costing'] || 0;
+
+            // FINANCING CASH FLOWS
+            const debtInflow = aggregatedData['Debt Inflow'] || 0; 
+            const debtRepayments = aggregatedData['Debt Repayments/Dividends'] || 0;
+
+            const beginningCash = getInputValue('input-beginning-cash');
+
+            // --- 2. Calculate CFO, CFI, CFF ---
+            
+            // CFO: Sum of cash received minus sum of cash paid for operations
+            const totalCashOperatingOutflows = cogsCashOut + fulfillmentCashOut + salesMarketingCashOut + gAndACashOut + interestCashOut + taxesCashOut;
+            const cfo = salesCashIn - totalCashOperatingOutflows;
+            
+            // CFI: Cash spent on fixed assets (Capex)
+            const cfi = -capexCashOut;
+            
+            // CFF: Cash received from financing minus cash paid for financing
+            const cff = debtInflow - debtRepayments; 
+
+            // --- 3. Final Totals ---
+            const netChangeInCash = cfo + cfi + cff;
+            const endingCash = beginningCash + netChangeInCash;
+
+            // --- 4. Update Cash Flow Display ---
+
+            // CFO Details
+            formatCurrency(salesCashIn, 'cf-output-sales-in'); 
+            formatCurrency(totalCashOperatingOutflows, 'cf-output-opex-out-sum', false); // Negative sign is applied by the formatter for the sum
+            formatCurrency(-cogsCashOut, 'cf-output-cogs-out'); 
+            formatCurrency(-fulfillmentCashOut, 'cf-output-fulfillment-out'); 
+            formatCurrency(-salesMarketingCashOut, 'cf-output-s&m-out'); 
+            formatCurrency(-gAndACashOut, 'cf-output-g&a-out'); 
+            formatCurrency(-interestCashOut, 'cf-output-interest-out'); 
+            formatCurrency(-taxesCashOut, 'cf-output-taxes-out'); 
+            formatCurrency(cfo, 'cf-output-cfo');
+            
+            // CFI
+            formatCurrency(-capexCashOut, 'cf-output-capex'); 
+            formatCurrency(cfi, 'cf-output-cfi');
+            formatCurrency(cfi, 'cf-output-cfi-total');
+
+            // CFF 
+            formatCurrency(debtInflow, 'cf-output-financing-in'); 
+            formatCurrency(-debtRepayments, 'cf-output-financing-out'); 
+            formatCurrency(cff, 'cf-output-cff');
+            formatCurrency(cff, 'cf-output-cff-total');
+
+            // Final Totals
+            formatCurrency(netChangeInCash, 'cf-output-net-change');
+            formatCurrency(beginningCash, 'cf-output-beginning-cash');
+            formatCurrency(endingCash, 'cf-output-ending-cash');
+        };
+
+        // Initialize the view state
+        window.onload = () => {
+            // Set default beginning cash for a runnable example
+            document.getElementById('input-beginning-cash').value = 100000;
+            recalculateAll();
+            showTab('data'); 
+        }
+    </script>
+</body>
+</html>
