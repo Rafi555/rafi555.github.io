@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Drawing Canvas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for canvas and controls */
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        canvas {
+            background-color: #ffffff;
+            border: 2px solid #e5e7eb; /* Light gray border */
+            touch-action: none; /* Prevents default touch behavior like scrolling */
+            cursor: crosshair;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center p-4 sm:p-8">
+
+    <div class="w-full max-w-4xl">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-800 mb-6 text-center">Open Canvas Sketchpad</h1>
+        
+        <!-- Drawing Controls -->
+        <div id="controls" class="flex flex-wrap justify-center items-center gap-3 sm:gap-4 p-4 bg-white rounded-xl shadow-lg mb-6">
+            
+            <!-- Color Picker -->
+            <label for="colorPicker" class="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500"><path d="M12 2a10 10 0 0 0 9 9.87V22H3v-2.13A10 10 0 0 0 12 2Z"/><path d="M7 11.07V6a5 5 0 0 1 10 0v5.07"/></svg>
+                Color:
+                <input type="color" id="colorPicker" value="#000000" class="h-8 w-8 rounded-full border-none p-0 cursor-pointer">
+            </label>
+
+            <!-- Line Thickness Slider -->
+            <label for="thicknessSlider" class="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500"><path d="M2 12a10 10 0 1 0 20 0 10 10 0 0 0-20 0z"/><circle cx="12" cy="12" r="1"/></svg>
+                Thickness:
+                <input type="range" id="thicknessSlider" min="1" max="50" value="5" class="w-24 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                <span id="thicknessValue" class="text-xs w-4">5</span>
+            </label>
+            
+            <!-- Clear Button -->
+            <button id="clearButton" class="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 shadow-md hover:shadow-lg active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                Clear Canvas
+            </button>
+            
+        </div>
+
+        <!-- Canvas Container -->
+        <div id="canvas-container" class="w-full aspect-[4/3] rounded-xl shadow-2xl overflow-hidden">
+            <canvas id="drawingCanvas"></canvas>
+        </div>
+
+    </div>
+
+    <script>
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        const colorPicker = document.getElementById('colorPicker');
+        const thicknessSlider = document.getElementById('thicknessSlider');
+        const thicknessValue = document.getElementById('thicknessValue');
+        const clearButton = document.getElementById('clearButton');
+        const canvasContainer = document.getElementById('canvas-container');
+
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        // Initial setup for context
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // --- Core Drawing Logic ---
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            // Determine client coordinates based on event type (mouse or touch)
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            // Get canvas-relative coordinates
+            const rect = canvas.getBoundingClientRect();
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+
+            ctx.strokeStyle = colorPicker.value;
+            ctx.lineWidth = thicknessSlider.value;
+
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            // Update last coordinates for the next line segment
+            [lastX, lastY] = [x, y];
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            // Capture initial position (adjust for touch events if necessary)
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            [lastX, lastY] = [clientX - rect.left, clientY - rect.top];
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        // --- Responsiveness and Initialization ---
+
+        function resizeCanvas() {
+            // Set canvas dimensions to match its container's current dimensions
+            const containerWidth = canvasContainer.clientWidth;
+            const containerHeight = canvasContainer.clientHeight;
+
+            // Note: We set both the CSS size (via Tailwind/style) and the drawing buffer size
+            canvas.style.width = containerWidth + 'px';
+            canvas.style.height = containerHeight + 'px';
+
+            // Store the current drawing data
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            // Update the canvas resolution (drawing buffer)
+            canvas.width = containerWidth;
+            canvas.height = containerHeight;
+
+            // Restore the drawing data
+            ctx.putImageData(imageData, 0, 0);
+
+            // Re-apply styles after context reset
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = thicknessSlider.value;
+            ctx.strokeStyle = colorPicker.value;
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // --- Event Listeners ---
+
+        // Mouse Events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        // Stop drawing when mouse button is released anywhere on the window
+        window.addEventListener('mouseup', stopDrawing);
+
+        // Touch Events (for mobile)
+        canvas.addEventListener('touchstart', (e) => {
+            // Prevent scrolling/zooming while drawing
+            e.preventDefault();
+            startDrawing(e);
+        });
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            draw(e);
+        });
+        // Stop drawing when touch ends anywhere on the window
+        window.addEventListener('touchend', stopDrawing);
+
+        // Control Events
+        clearButton.addEventListener('click', clearCanvas);
+        thicknessSlider.addEventListener('input', () => {
+            thicknessValue.textContent = thicknessSlider.value;
+        });
+
+        // Initial setup and responsiveness
+        window.addEventListener('load', () => {
+            resizeCanvas();
+        });
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Initial draw on load to ensure context is set
+        clearCanvas();
+
+    </script>
+</body>
+</html>
