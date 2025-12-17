@@ -29,7 +29,6 @@
                 </div>
                 <div class="hidden md:flex gap-8 text-sm font-medium text-slate-600">
                     <a href="#philosophy" class="hover:text-blue-600">Our Philosophy</a>
-                    <a href="#pillars" class="hover:text-blue-600">Pillars</a>
                     <a href="#assessment" class="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition">Take Assessment</a>
                 </div>
             </div>
@@ -55,11 +54,6 @@
                 <a href="#philosophy" class="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all">
                     How it Works
                 </a>
-            </div>
-            <div class="mt-12 flex flex-wrap justify-center gap-6 text-sm text-slate-400">
-                <span class="flex items-center gap-2"><svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293l-8.5 8.5L4.707 9.707l-1.414 1.414 4.5 4.5a1 1 0 001.414 0l9.914-9.914-1.414-1.414z"/></svg> 100% Free</span>
-                <span class="flex items-center gap-2"><svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293l-8.5 8.5L4.707 9.707l-1.414 1.414 4.5 4.5a1 1 0 001.414 0l9.914-9.914-1.414-1.414z"/></svg> Takes ~3 Minutes</span>
-                <span class="flex items-center gap-2"><svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293l-8.5 8.5L4.707 9.707l-1.414 1.414 4.5 4.5a1 1 0 001.414 0l9.914-9.914-1.414-1.414z"/></svg> Immediate Diagnostic</span>
             </div>
         </div>
     </header>
@@ -129,47 +123,48 @@
                             <label class="block text-xs font-bold uppercase text-slate-400 mb-1">Business Email</label>
                             <input type="email" id="lead-email" placeholder="john@company.com" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                         </div>
-                        <button onclick="startQuiz()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition mt-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-400 mb-1">Phone Number</label>
+                            <input type="tel" id="lead-phone" placeholder="+1 (555) 000-0000" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <button id="start-btn" onclick="startQuiz()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition mt-4 disabled:opacity-50">
                             Begin Assessment
                         </button>
                     </div>
                 </div>
 
-                <!-- Step 2: Questions (Will be injected by JS) -->
+                <!-- Step 2: Questions -->
                 <div id="quiz-questions" class="hidden p-10">
                     <div class="flex justify-between items-center mb-8">
                         <span id="category-tag" class="text-xs font-bold uppercase tracking-widest text-blue-600 bg-blue-50 px-3 py-1 rounded-full">Measurement</span>
                         <span id="question-count" class="text-xs text-slate-400 font-medium">Question 1 of 15</span>
                     </div>
-                    <h3 id="question-text" class="text-2xl font-bold text-slate-800 mb-10 leading-snug">Do you track gross margin by product or service?</h3>
+                    <h3 id="question-text" class="text-2xl font-bold text-slate-800 mb-10 leading-snug">...</h3>
                     <div class="grid grid-cols-1 gap-4">
-                        <button onclick="handleAnswer(true)" class="flex items-center justify-between p-5 rounded-2xl border-2 border-slate-100 hover:border-blue-600 hover:bg-blue-50 transition group">
+                        <button onclick="handleAnswer(true)" class="flex items-center justify-between p-5 rounded-2xl border-2 border-slate-100 hover:border-blue-600 hover:bg-blue-50 transition group text-left">
                             <span class="font-bold text-lg">Yes, absolutely.</span>
                             <div class="w-6 h-6 rounded-full border-2 border-slate-200 group-hover:bg-blue-600 group-hover:border-blue-600 transition"></div>
                         </button>
-                        <button onclick="handleAnswer(false)" class="flex items-center justify-between p-5 rounded-2xl border-2 border-slate-100 hover:border-blue-600 hover:bg-blue-50 transition group">
+                        <button onclick="handleAnswer(false)" class="flex items-center justify-between p-5 rounded-2xl border-2 border-slate-100 hover:border-blue-600 hover:bg-blue-50 transition group text-left">
                             <span class="font-bold text-lg">Not currently / No.</span>
                             <div class="w-6 h-6 rounded-full border-2 border-slate-200 group-hover:bg-blue-600 group-hover:border-blue-600 transition"></div>
                         </button>
                     </div>
                 </div>
 
-                <!-- Step 3: Selection Questions (Dropdowns/Multiple Choice) -->
+                <!-- Step 3: Selection Questions -->
                 <div id="quiz-selection" class="hidden p-10">
                     <div class="mb-8">
                         <span class="text-xs font-bold uppercase tracking-widest text-blue-600 bg-blue-50 px-3 py-1 rounded-full">Business Context</span>
                     </div>
-                    <h3 id="select-question-text" class="text-2xl font-bold text-slate-800 mb-8 leading-snug">What is your current business stage?</h3>
-                    <div id="select-options" class="grid grid-cols-1 gap-3">
-                        <!-- Options injected here -->
-                    </div>
+                    <h3 id="select-question-text" class="text-2xl font-bold text-slate-800 mb-8 leading-snug">...</h3>
+                    <div id="select-options" class="grid grid-cols-1 gap-3"></div>
                 </div>
 
                 <!-- Step 4: Loading -->
                 <div id="quiz-loading" class="hidden p-20 text-center">
                     <div class="animate-spin w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-6"></div>
                     <h3 class="text-xl font-bold">Analyzing your responses...</h3>
-                    <p class="text-slate-500">Mapping results against Cascade framework</p>
                 </div>
 
                 <!-- Step 5: Results -->
@@ -184,23 +179,29 @@
                                 <span id="score-text" class="text-3xl font-bold">0%</span>
                             </div>
                         </div>
-                        <h2 id="result-title" class="text-3xl font-bold mb-2">Unstable Foundations</h2>
-                        <p id="result-desc" class="text-slate-500">Your systems are currently reactive. Growth will likely lead to operational collapse without intervention.</p>
+                        <h2 id="result-title" class="text-3xl font-bold mb-2">Calculating...</h2>
+                        <p id="result-desc" class="text-slate-500">...</p>
                     </div>
 
                     <div class="space-y-6 mb-10">
-                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 text-left">
                             <h4 class="font-bold text-blue-600 mb-1">Key Insight</h4>
-                            <p id="insight-text" class="text-sm text-slate-700">You are measuring activity, not outcomes. Your current data lacks the granularity to drive profitability decisions.</p>
+                            <p id="insight-text" class="text-sm text-slate-700">...</p>
                         </div>
                     </div>
 
                     <div id="next-steps" class="text-center bg-blue-600 p-8 rounded-2xl text-white">
-                        <h3 class="text-xl font-bold mb-2">Ready to secure your foundation?</h3>
-                        <p class="text-blue-100 mb-6 text-sm">Schedule a free 15-minute diagnostic call with a Cascade specialist.</p>
-                        <button onclick="window.location.href='#'" class="w-full bg-white text-blue-600 font-bold py-3 rounded-xl hover:bg-slate-100 transition shadow-lg">
-                            Book Strategy Call
-                        </button>
+                        <div id="booking-normal">
+                            <h3 class="text-xl font-bold mb-2">Ready to secure your foundation?</h3>
+                            <p class="text-blue-100 mb-6 text-sm">Schedule a free 15-minute diagnostic call with a Cascade specialist.</p>
+                            <button id="book-call-btn" onclick="bookStrategyCall()" class="w-full bg-white text-blue-600 font-bold py-3 rounded-xl hover:bg-slate-100 transition shadow-lg flex items-center justify-center gap-2">
+                                Book Strategy Call
+                            </button>
+                        </div>
+                        <div id="booking-success" class="hidden">
+                            <h3 class="text-xl font-bold mb-2">Request Received!</h3>
+                            <p class="text-blue-100 text-sm">Our team will reach out to you via email within 24 hours to schedule your session.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -208,185 +209,189 @@
         </div>
     </section>
 
-    <!-- Credibility & Footer -->
-    <section class="py-24 bg-white border-t border-slate-100">
+    <!-- Footer -->
+    <footer class="py-12 bg-white border-t border-slate-100">
         <div class="max-w-7xl mx-auto px-4 text-center">
-            <h2 class="text-2xl font-bold mb-12">Why Cascade Consulting?</h2>
-            <div class="grid md:grid-cols-3 gap-12 max-w-5xl mx-auto mb-20">
-                <div>
-                    <div class="text-4xl font-bold text-blue-600 mb-2">70%+</div>
-                    <p class="text-slate-600 text-sm font-medium">of businesses operate without documented SOPs. We fix that.</p>
+            <div class="flex items-center justify-center gap-2 mb-4">
+                <div class="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                 </div>
-                <div>
-                    <div class="text-4xl font-bold text-blue-600 mb-2">Profit-First</div>
-                    <p class="text-slate-600 text-sm font-medium">We optimize for contribution margin, not vanity revenue metrics.</p>
-                </div>
-                <div>
-                    <div class="text-4xl font-bold text-blue-600 mb-2">Real Experience</div>
-                    <p class="text-slate-600 text-sm font-medium">Built for MSMEs and Startups, moving beyond academic theory.</p>
-                </div>
+                <span class="text-lg font-bold tracking-tight text-slate-800 uppercase">Cascade</span>
             </div>
-            
-            <footer class="pt-20 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-8">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                    </div>
-                    <span class="text-lg font-bold tracking-tight text-slate-800 uppercase">Cascade</span>
-                </div>
-                <div class="flex gap-8 text-sm text-slate-500">
-                    <a href="#" class="hover:text-blue-600">LinkedIn</a>
-                    <a href="#" class="hover:text-blue-600">YouTube</a>
-                    <a href="#" class="hover:text-blue-600">Resources</a>
-                </div>
-                <p class="text-xs text-slate-400">&copy; 2024 Cascade Consulting. All rights reserved.</p>
-            </footer>
+            <p class="text-xs text-slate-400">&copy; 2024 Cascade Consulting. All rights reserved.</p>
         </div>
-    </section>
+    </footer>
 
-    <script>
-        const quizData = {
-            bestPractices: [
-                { category: 'Measurement', q: 'Do you track gross margin by product or service?' },
-                { category: 'Measurement', q: 'Do you review KPIs weekly or monthly?' },
-                { category: 'Measurement', q: 'Do you separate fixed vs variable costs?' },
-                { category: 'Process', q: 'Are SOPs documented for key operations?' },
-                { category: 'Process', q: 'Can work be done without the founder for 48 hours?' },
-                { category: 'Process', q: 'Are roles and responsibilities clearly defined?' },
-                { category: 'Data', q: 'Are decisions backed by dashboards or reports?' },
-                { category: 'Data', q: 'Is data consistent across tools (sales, ops, finance)?' },
-                { category: 'Data', q: 'Do teams trust the numbers they see?' },
-                { category: 'Strategy', q: 'Do you have a clear growth target for the next 12 months?' }
-            ],
-            qualifiers: [
-                { 
-                    q: 'Business Stage', 
-                    options: ['Idea / Pre-revenue', 'Early revenue', 'Growing (chaos phase)', 'Stable but stuck', 'Scaling'] 
-                },
-                { 
-                    q: '90-Day Goal', 
-                    options: ['Improve profitability', 'Reduce costs', 'Increase revenue predictability', 'Build systems for scale', 'Prepare for investment'] 
-                },
-                { 
-                    q: 'Biggest Bottleneck', 
-                    options: ['Cash flow', 'Operations inefficiency', 'Team productivity', 'Poor reporting', 'Founder dependency'] 
-                },
-                { 
-                    q: 'Preferred Support Model', 
-                    options: ['DIY frameworks', 'Advisory / consulting', 'Hands-on implementation', 'Full ops + data setup'] 
-                }
-            ]
-        };
+<script type="module">
+    // SET THIS TO YOUR ACTUAL GOOGLE WEB APP URL
+    const GOOGLE_SHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx4i7KB7KAHfepLRMEaAIhL9jlhOiVZeQ8LQ1xhFmRQrtPo-XzCESIvlBhhkIBOjk_e/exec";
 
-        let currentStep = 0;
-        let score = 0;
-        let userLead = { name: '', email: '' };
+    // Quiz State
+    const quizData = {
+        bestPractices: [
+            { category: 'Measurement', q: 'Do you track gross margin by product or service?' },
+            { category: 'Measurement', q: 'Do you review KPIs weekly or monthly?' },
+            { category: 'Measurement', q: 'Do you separate fixed vs variable costs?' },
+            { category: 'Process', q: 'Are SOPs documented for key operations?' },
+            { category: 'Process', q: 'Can work be done without the founder for 48 hours?' },
+            { category: 'Process', q: 'Are roles and responsibilities clearly defined?' },
+            { category: 'Data', q: 'Are decisions backed by dashboards or reports?' },
+            { category: 'Data', q: 'Is data consistent across tools (sales, ops, finance)?' },
+            { category: 'Data', q: 'Do teams trust the numbers they see?' },
+            { category: 'Strategy', q: 'Do you have a clear growth target for the next 12 months?' }
+        ],
+        qualifiers: [
+            { id: 'stage', q: 'Business Stage', options: ['Idea / Pre-revenue', 'Early revenue', 'Growing (chaos phase)', 'Stable but stuck', 'Scaling'] },
+            { id: 'goal', q: '90-Day Goal', options: ['Improve profitability', 'Reduce costs', 'Increase revenue predictability', 'Build systems for scale', 'Prepare for investment'] },
+            { id: 'bottleneck', q: 'Biggest Bottleneck', options: ['Cash flow', 'Operations inefficiency', 'Team productivity', 'Poor reporting', 'Founder dependency'] },
+            { id: 'support', q: 'Preferred Support Model', options: ['DIY frameworks', 'Advisory / consulting', 'Hands-on implementation', 'Full ops + data setup'] }
+        ]
+    };
 
-        function updateProgress() {
-            const total = quizData.bestPractices.length + quizData.qualifiers.length;
-            const percentage = (currentStep / total) * 100;
-            document.getElementById('progress-bar').style.width = percentage + '%';
+    let currentStep = 0;
+    let score = 0;
+    let responses = {};
+    let leadData = { name: '', email: '', phone: '' };
+
+    // Bridge to Google Sheets
+    async function postToGoogleSheets(finalData = {}) {
+        const params = new URLSearchParams();
+        params.append('name', leadData.name);
+        params.append('email', leadData.email);
+        params.append('phone', leadData.phone);
+        params.append('business_stage', responses['stage'] || 'Unknown');
+        params.append('score', finalData.score || 0);
+        params.append('action', finalData.action || 'Assessment Completed');
+
+        try {
+            await fetch(GOOGLE_SHEET_WEB_APP_URL, {
+                method: "POST",
+                mode: "no-cors", // Required for Apps Script Web App
+                body: params
+            });
+        } catch (err) { console.error("Google Sheets Sync Failed", err); }
+    }
+
+    // Global UI Handlers
+    window.startQuiz = function() {
+        const name = document.getElementById('lead-name').value;
+        const email = document.getElementById('lead-email').value;
+        const phone = document.getElementById('lead-phone').value;
+        
+        if(!name || !email || !phone) {
+            alert('Please provide your name, email, and phone to continue.');
+            return;
         }
 
-        function startQuiz() {
-            const name = document.getElementById('lead-name').value;
-            const email = document.getElementById('lead-email').value;
-            
-            if(!name || !email) {
-                alert('Please provide your name and email to continue.');
-                return;
-            }
-            
-            userLead = { name, email };
-            document.getElementById('step-0').classList.add('hidden');
-            document.getElementById('quiz-questions').classList.remove('hidden');
-            renderQuestion();
-        }
+        leadData = { name, email, phone };
+        const startBtn = document.getElementById('start-btn');
+        startBtn.disabled = true;
+        startBtn.innerText = "Saving...";
 
-        function renderQuestion() {
-            if (currentStep < quizData.bestPractices.length) {
-                const q = quizData.bestPractices[currentStep];
-                document.getElementById('category-tag').innerText = q.category;
-                document.getElementById('question-count').innerText = `Question ${currentStep + 1} of 15`;
-                document.getElementById('question-text').innerText = q.q;
-                updateProgress();
+        document.getElementById('step-0').classList.add('hidden');
+        document.getElementById('quiz-questions').classList.remove('hidden');
+        renderQuestion();
+    }
+
+    window.handleAnswer = function(isYes) {
+        const q = quizData.bestPractices[currentStep];
+        responses[q.q] = isYes;
+        if (isYes) score++;
+        currentStep++;
+        renderQuestion();
+    }
+
+    window.bookStrategyCall = async function() {
+        const btn = document.getElementById('book-call-btn');
+        btn.disabled = true;
+        btn.innerText = "Processing...";
+
+        const finalPercentage = Math.round((score / quizData.bestPractices.length) * 100);
+        await postToGoogleSheets({ score: finalPercentage, action: 'Strategy Call Booked' });
+
+        document.getElementById('booking-normal').classList.add('hidden');
+        document.getElementById('booking-success').classList.remove('hidden');
+    }
+
+    function renderQuestion() {
+        const totalSteps = quizData.bestPractices.length + quizData.qualifiers.length;
+        const progress = (currentStep / totalSteps) * 100;
+        document.getElementById('progress-bar').style.width = progress + '%';
+
+        if (currentStep < quizData.bestPractices.length) {
+            const q = quizData.bestPractices[currentStep];
+            document.getElementById('category-tag').innerText = q.category;
+            document.getElementById('question-count').innerText = `Question ${currentStep + 1} of 15`;
+            document.getElementById('question-text').innerText = q.q;
+        } else {
+            renderSelectionQuestion();
+        }
+    }
+
+    function renderSelectionQuestion() {
+        const qualIdx = currentStep - quizData.bestPractices.length;
+        if (qualIdx < quizData.qualifiers.length) {
+            const q = quizData.qualifiers[qualIdx];
+            document.getElementById('quiz-questions').classList.add('hidden');
+            document.getElementById('quiz-selection').classList.remove('hidden');
+            document.getElementById('select-question-text').innerText = q.q;
+            
+            const optionsContainer = document.getElementById('select-options');
+            optionsContainer.innerHTML = '';
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-xl border border-slate-200 hover:border-blue-600 hover:bg-blue-50 transition font-medium";
+                btn.innerText = opt;
+                btn.onclick = () => {
+                    responses[q.id] = opt;
+                    currentStep++;
+                    renderSelectionQuestion();
+                };
+                optionsContainer.appendChild(btn);
+            });
+        } else {
+            showResults();
+        }
+    }
+
+    async function showResults() {
+        document.getElementById('quiz-selection').classList.add('hidden');
+        document.getElementById('quiz-loading').classList.remove('hidden');
+        
+        const finalPercentage = Math.round((score / quizData.bestPractices.length) * 100);
+        await postToGoogleSheets({ score: finalPercentage, action: 'Assessment Completed' });
+
+        setTimeout(() => {
+            document.getElementById('quiz-loading').classList.add('hidden');
+            document.getElementById('quiz-results').classList.remove('hidden');
+            
+            const scoreCircle = document.getElementById('score-circle');
+            const scoreText = document.getElementById('score-text');
+            const offset = 364.4 - (364.4 * finalPercentage / 100);
+            scoreCircle.style.strokeDashoffset = offset;
+            scoreText.innerText = finalPercentage + '%';
+
+            const title = document.getElementById('result-title');
+            const desc = document.getElementById('result-desc');
+            const insight = document.getElementById('insight-text');
+
+            if (finalPercentage <= 40) {
+                title.innerText = "Unstable Foundations";
+                desc.innerText = "Growth will likely lead to operational collapse without intervention.";
+                insight.innerText = "Transition from founder-led execution to system-led execution immediately.";
+            } else if (finalPercentage <= 70) {
+                title.innerText = "Operational Risk Zone";
+                desc.innerText = "You have momentum, but infrastructure is straining.";
+                insight.innerText = "Focus on streamlining MIS and documenting key SOPs to support scale.";
             } else {
-                renderSelectionQuestion();
+                title.innerText = "Scale-Ready (With Gaps)";
+                desc.innerText = "You are ready for aggressive expansion.";
+                insight.innerText = "Optimize predictive analytics and remove minor customer friction points.";
             }
-        }
+            document.getElementById('progress-bar').style.width = '100%';
+        }, 1000);
+    }
+</script>
 
-        function handleAnswer(isYes) {
-            if (isYes) score++;
-            currentStep++;
-            renderQuestion();
-        }
-
-        function renderSelectionQuestion() {
-            const qualIdx = currentStep - quizData.bestPractices.length;
-            
-            if (qualIdx < quizData.qualifiers.length) {
-                const q = quizData.qualifiers[qualIdx];
-                document.getElementById('quiz-questions').classList.add('hidden');
-                document.getElementById('quiz-selection').classList.remove('hidden');
-                document.getElementById('select-question-text').innerText = q.q;
-                
-                const optionsContainer = document.getElementById('select-options');
-                optionsContainer.innerHTML = '';
-                
-                q.options.forEach(opt => {
-                    const btn = document.createElement('button');
-                    btn.className = "w-full text-left p-4 rounded-xl border border-slate-200 hover:border-blue-600 hover:bg-blue-50 transition font-medium";
-                    btn.innerText = opt;
-                    btn.onclick = () => {
-                        currentStep++;
-                        renderSelectionQuestion();
-                    };
-                    optionsContainer.appendChild(btn);
-                });
-                updateProgress();
-            } else {
-                showResults();
-            }
-        }
-
-        function showResults() {
-            document.getElementById('quiz-selection').classList.add('hidden');
-            document.getElementById('quiz-loading').classList.remove('hidden');
-            
-            setTimeout(() => {
-                document.getElementById('quiz-loading').classList.add('hidden');
-                document.getElementById('quiz-results').classList.remove('hidden');
-                
-                const finalPercentage = Math.round((score / quizData.bestPractices.length) * 100);
-                const scoreCircle = document.getElementById('score-circle');
-                const scoreText = document.getElementById('score-text');
-                
-                // Animate circle: 364.4 is full circumference
-                const offset = 364.4 - (364.4 * finalPercentage / 100);
-                scoreCircle.style.strokeDashoffset = offset;
-                scoreText.innerText = finalPercentage + '%';
-
-                const title = document.getElementById('result-title');
-                const desc = document.getElementById('result-desc');
-                const insight = document.getElementById('insight-text');
-
-                if (finalPercentage <= 40) {
-                    title.innerText = "Unstable Foundations";
-                    desc.innerText = "Your growth is currently at high risk. Your processes are informal and your measurement is reactive.";
-                    insight.innerText = "You are likely hitting a 'ceiling of complexity.' To move past this, you must transition from founder-led execution to system-led execution.";
-                } else if (finalPercentage <= 70) {
-                    title.innerText = "Operational Risk Zone";
-                    desc.innerText = "You have good momentum, but your infrastructure is beginning to strain. Scale will create bottlenecks.";
-                    insight.innerText = "Data exists but isn't being used to drive decision-making. You need to focus on streamlining MIS and documenting key SOPs.";
-                } else {
-                    title.innerText = "Scale-Ready (With Gaps)";
-                    desc.innerText = "You are in the top tier of SMEs. Your foundations are solid, and you are ready for aggressive expansion.";
-                    insight.innerText = "Focus on micro-optimizations and predictive analytics. Your goal now is to remove any remaining friction from the customer journey.";
-                }
-                updateProgress();
-                document.getElementById('progress-bar').style.width = '100%';
-            }, 1500);
-        }
-    </script>
 </body>
 </html>
